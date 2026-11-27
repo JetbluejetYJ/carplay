@@ -142,13 +142,13 @@ body.map-dark:not(.traffic-on) #map.is-naver img{filter:invert(.92) hue-rotate(1
 .sp-now{display:flex;gap:clamp(10px,4cqw,18px);align-items:center}
 #spArt{flex:none;width:clamp(56px,min(30cqw,30cqh),150px);aspect-ratio:1;border-radius:12px;object-fit:cover;background:var(--panel3);box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .sp-meta{flex:1;min-width:0}
-#spTitle{font-size:clamp(16px,6cqw,24px);font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
-#spArtist{font-size:clamp(13px,4.4cqw,17px);color:#d1d5db;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spTitle{font-size:calc(clamp(16px,6cqw,24px) * var(--fsM,1));font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+#spArtist{font-size:calc(clamp(13px,4.4cqw,17px) * var(--fsM,1));color:#d1d5db;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spDevice{font-size:12px;color:var(--green);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-progress{margin-top:clamp(10px,3cqh,18px);height:22px;display:flex;align-items:center;cursor:pointer}
 .sp-track{position:relative;flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.22)}
 #spBar{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:#fff;width:0}
-.sp-times{display:flex;justify-content:space-between;font-size:12px;color:#c7c9ce;font-variant-numeric:tabular-nums}
+.sp-times{display:flex;justify-content:space-between;font-size:calc(12px * var(--fsM,1));color:#c7c9ce;font-variant-numeric:tabular-nums}
 .sp-ctrls{display:flex;align-items:center;justify-content:space-between;margin:clamp(4px,1.5cqh,12px) 0}
 .sp-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;opacity:.95}
 .sp-btn svg{width:26px;height:26px}
@@ -172,9 +172,9 @@ body.map-dark:not(.traffic-on) #map.is-naver img{filter:invert(.92) hue-rotate(1
 
 /* ───── 시계 ───── */
 #clockPanel{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px}
-#clockAmPm{font-size:min(9cqw,11cqh);color:var(--sub);font-weight:600;height:1.2em}
-#clockTime{font-size:min(30cqw,36cqh);font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-#clockDate{font-size:min(9cqw,10cqh);color:var(--sub);margin-top:min(3cqh,10px);font-weight:500}
+#clockAmPm{font-size:calc(min(9cqw,11cqh) * var(--fsC,1));color:var(--sub);font-weight:600;height:1.2em}
+#clockTime{font-size:calc(min(30cqw,36cqh) * var(--fsC,1));font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#clockDate{font-size:calc(min(9cqw,10cqh) * var(--fsC,1));color:var(--sub);margin-top:min(3cqh,10px);font-weight:500}
 
 /* ───── 날씨 ───── */
 #weatherPanel{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;
@@ -264,6 +264,15 @@ body:not(.mode-track) #placeChip{display:none}
 }
 /* 음악 칸이 작으면 플레이리스트를 숨기고 버튼을 줄임 */
 @container (max-height: 420px){ .sp-list-head, .sp-list{display:none} #spMain{justify-content:center} }
+@container (max-height: 230px){
+  .sp-wrap{padding:10px 14px} #musicPanel #spArt{width:min(42cqh,72px);border-radius:8px}
+  #spTitle{-webkit-line-clamp:1} #spDevice, #spOpenApp, .sp-times{display:none!important}
+  .sp-connect{gap:6px;padding:4px} .sp-connect p, .sp-logo{display:none}
+}
+@container (max-height: 160px){
+  .sp-progress{display:none} .sp-wrap{padding:8px 12px} #musicPanel #spArt{width:min(30cqh,44px)} #musicPanel #spTitle{font-size:calc(15px * var(--fsM,1))} #spArtist{margin-top:1px}
+  .sp-ctrls{margin:2px 0 0} .sp-btn{width:38px;height:38px} .sp-btn.play{width:44px;height:44px} .sp-btn.play svg{width:22px;height:22px}
+}
 @container (max-height: 270px){
   .sp-btn{width:42px;height:42px} .sp-btn.play{width:54px;height:54px}
   .sp-ctrls{margin:2px 0} .sp-progress{margin-top:6px}
@@ -314,7 +323,7 @@ body.mode-track #app{grid-template-columns:minmax(0,var(--c1)) minmax(0,var(--c2
 #placeChip{border-radius:14px;padding:9px 14px;font-size:16px;font-weight:600}
 #placeChip small{color:#aeaeb2}
 #speedo{width:auto;height:auto;min-width:64px;padding:8px 12px;border-radius:14px;background:var(--mat);color:#fff;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:.5px solid rgba(255,255,255,.08)}
-#speedo b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+#speedo b{font-size:calc(28px * var(--fsS,1));font-weight:700;font-variant-numeric:tabular-nums}
 #speedo span{color:#aeaeb2;font-size:11px;font-weight:600}
 body.hide-speed #speedo, body.hide-place #placeChip{display:none!important}
 #osmAttr{position:absolute;right:6px;bottom:6px;z-index:450;font-size:10px;line-height:18px;color:rgba(255,255,255,.8);background:rgba(0,0,0,.35);padding:0 6px;border-radius:9px;cursor:pointer}
@@ -342,7 +351,7 @@ body.lite .me-dot-halo{animation:none;opacity:0}
 .sp-bg{filter:blur(50px) saturate(1.6) brightness(.55)}
 body.no-albumbg .sp-bg{display:none}
 #spArt{width:clamp(64px,min(34cqw,40cqh),220px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-#spTitle{font-size:clamp(17px,6.2cqw,26px);font-weight:700}
+#spTitle{font-size:calc(clamp(17px,6.2cqw,26px) * var(--fsM,1));font-weight:700}
 #spArtist{color:rgba(235,235,245,.65);font-weight:500}
 #spDevice{color:var(--green);font-weight:500}
 .sp-track{height:6px;border-radius:3px;background:rgba(255,255,255,.2)}
@@ -381,16 +390,62 @@ body:not(.mode-app):not(.map-off) #clockGear{display:none} /* 지도에 설정 �
 #weatherPanel.wx-rain{background:linear-gradient(180deg,#4a5a6e,#28323f)}
 #weatherPanel.wx-snow{background:linear-gradient(180deg,#7d8ea3,#4b5a6d)}
 #weatherPanel.night{background:linear-gradient(180deg,#1b2140,#0c1022)}
-#wxPlace{font-size:min(8.5cqw,13cqh);font-weight:600;color:#fff;display:flex;align-items:center;gap:4px;max-width:100%}
+#wxPlace{font-size:calc(min(8.5cqw,13cqh) * var(--fsW,1));font-weight:600;color:#fff;display:flex;align-items:center;gap:4px;max-width:100%}
 #wxPlace::after{content:"";flex:none;width:.7em;height:.7em;background:currentColor;clip-path:polygon(100% 0,0 45%,45% 55%,55% 100%)}
 .wx-main{margin:0;gap:0}
-#wxTemp{order:-1;font-size:min(24cqw,40cqh);font-weight:300;margin-right:.15em}
-#wxIcon{font-size:min(13cqw,22cqh)}
-#wxDesc{font-size:min(7.5cqw,11cqh);margin-top:0;color:#fff;font-weight:600}
-#wxRange{font-size:min(7cqw,10.5cqh);color:rgba(255,255,255,.85);font-weight:500;margin-top:1px}
-#wxAir{font-size:min(6.5cqw,10cqh);margin-top:4px;background:rgba(255,255,255,.16);padding:1px 8px}
+#wxTemp{order:-1;font-size:calc(min(24cqw,40cqh) * var(--fsW,1));font-weight:300;margin-right:.15em}
+#wxIcon{font-size:calc(min(13cqw,22cqh) * var(--fsW,1))}
+#wxDesc{font-size:calc(min(7.5cqw,11cqh) * var(--fsW,1));margin-top:0;color:#fff;font-weight:600}
+#wxRange{font-size:calc(min(7cqw,10.5cqh) * var(--fsW,1));color:rgba(255,255,255,.85);font-weight:500;margin-top:1px}
+#wxAir{font-size:calc(min(6.5cqw,10cqh) * var(--fsW,1));margin-top:4px;background:rgba(255,255,255,.16);padding:1px 8px}
 body.hide-air #wxAir{display:none!important}
 @container (max-height:150px){ #wxAir{display:none!important} }
+
+/* 날씨 배경 그림 */
+#settings:not(.show-legacy) .legacy-only{display:none!important}
+#weatherPanel > *:not(.wx-fx){position:relative;z-index:1;text-shadow:0 1px 4px rgba(0,0,0,.35)}
+.wx-fx{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.wx-fx i{position:absolute;display:block}
+#weatherPanel.wx-clear{background:linear-gradient(180deg,#2d7fe0 0%,#58b0f2 100%)}
+#weatherPanel.wx-cloud{background:linear-gradient(180deg,#5d7189 0%,#3a4c62 100%)}
+#weatherPanel.wx-fog{background:linear-gradient(180deg,#7c8692 0%,#525a66 100%)}
+#weatherPanel.wx-rain{background:linear-gradient(180deg,#46566a 0%,#252f3c 100%)}
+#weatherPanel.wx-thunder{background:linear-gradient(180deg,#30364a 0%,#14171f 100%)}
+#weatherPanel.wx-snow{background:linear-gradient(180deg,#8195ad 0%,#4d5d72 100%)}
+#weatherPanel.night.wx-clear{background:linear-gradient(180deg,#121a3a 0%,#060914 100%)}
+#weatherPanel.night.wx-cloud, #weatherPanel.night.wx-fog{background:linear-gradient(180deg,#262d3b 0%,#11151d 100%)}
+#weatherPanel.night.wx-rain{background:linear-gradient(180deg,#1f2838 0%,#0c1018 100%)}
+#weatherPanel.night.wx-thunder{background:linear-gradient(180deg,#1a1d2c 0%,#07080d 100%)}
+#weatherPanel.night.wx-snow{background:linear-gradient(180deg,#2e3a50 0%,#141a26 100%)}
+/* 해 */
+.fx-sun{right:-18cqw;top:-18cqw;width:62cqw;height:62cqw;border-radius:50%;background:radial-gradient(circle,#fff6c4 0 18%,#ffd84d 30%,rgba(255,200,60,.45) 48%,rgba(255,200,60,0) 70%);animation:sunpulse 4s ease-in-out infinite}
+.fx-rays{right:-48cqw;top:-48cqw;width:122cqw;height:122cqw;border-radius:50%;background:repeating-conic-gradient(rgba(255,240,170,.20) 0 6deg,rgba(255,240,170,0) 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 20%,transparent 62%);mask:radial-gradient(circle,#000 20%,transparent 62%);animation:spin 40s linear infinite}
+@keyframes sunpulse{50%{transform:scale(1.08)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 달·별 */
+.fx-moon{right:8cqw;top:8cqh;width:16cqw;height:16cqw;border-radius:50%;box-shadow:inset -4cqw -1cqw 0 0 #f4f1d0;filter:drop-shadow(0 0 8px rgba(255,250,210,.5));transform:rotate(-25deg)}
+.fx-star{width:2px;height:2px;border-radius:50%;background:#fff;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.15}}
+/* 구름 */
+.fx-cloud{width:70cqw;height:26cqw;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,rgba(255,255,255,.34),rgba(255,255,255,0) 68%);filter:blur(2px);animation:drift linear infinite}
+.night .fx-cloud{background:radial-gradient(ellipse at 50% 60%,rgba(200,210,230,.18),rgba(200,210,230,0) 68%)}
+@keyframes drift{from{transform:translateX(-80cqw)}to{transform:translateX(130cqw)}}
+/* 안개 */
+.fx-fog{left:-50%;width:200%;height:30cqh;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));animation:fog 14s ease-in-out infinite alternate}
+@keyframes fog{to{transform:translateX(25%)}}
+/* 비 */
+.fx-drop{top:-20cqh;width:1.5px;height:max(14px,9cqh);border-radius:1px;background:linear-gradient(rgba(255,255,255,0),rgba(210,228,255,.85));animation:rain linear infinite}
+@keyframes rain{to{transform:translate3d(-14cqw,135cqh,0)}}
+.fx-drop{rotate:6deg}
+/* 번개 */
+.fx-flash{inset:0;background:#fff;opacity:0;animation:flash 7s infinite}
+@keyframes flash{0%,88%,92%,100%{opacity:0}89%{opacity:.55}90%{opacity:.08}91%{opacity:.35}}
+/* 눈 */
+.fx-flake{top:-6%;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,.7);animation:snow linear infinite}
+@keyframes snow{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(6cqw,60cqh,0)}100%{transform:translate3d(-3cqw,120cqh,0)}}
+.wx-fx.still i, body.lite .wx-fx i{animation:none!important}
+.wx-fx.still .fx-drop{transform:translateY(calc(var(--y) * 1cqh))} .wx-fx.still .fx-flake{transform:translateY(calc(var(--y) * 1cqh))}
+@media (prefers-reduced-motion:reduce){ .wx-fx i{animation:none!important} }
 
 /* iOS 토스트 */
 #toast{border-radius:18px;background:rgba(44,44,46,.92);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid rgba(255,255,255,.1);font-weight:500}
@@ -443,7 +498,7 @@ body.hide-air #wxAir{display:none!important}
 #speedo small{display:block;margin-top:3px;font-size:10px;font-weight:600;color:#aeaeb2;white-space:nowrap;font-variant-numeric:tabular-nums}
 #speedo small:empty{display:none}
 body.hide-trip #speedo small{display:none}
-body.map-off #speedo small{font-size:min(6cqw,9cqh);margin-top:min(2cqh,6px);color:#d1d1d6}
+body.map-off #speedo small{font-size:calc(min(6cqw,9cqh) * var(--fsS,1));margin-top:min(2cqh,6px);color:#d1d1d6}
 #speedo.over{background:#ff3b30!important;border-color:#ff3b30!important;animation:overpulse 1s ease-in-out infinite}
 #speedo.over b,#speedo.over span,#speedo.over small{color:#fff!important}
 body.map-off #speedo.over{background:none!important;animation:none}
@@ -454,7 +509,20 @@ body.map-off #speedo.over b{color:#ff453a!important;animation:overpulse 1s ease-
 #fabPark .p-ico{font-weight:800;font-size:20px;line-height:1;color:#e5e5ea;font-family:-apple-system,sans-serif}
 #fabPark.has-park .p-ico{color:#fff;background:#1c7ed6;border-radius:6px;padding:2px 6px}
 #carMarker{z-index:5}
-#routeChip{position:absolute;z-index:520;left:96px;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;padding:8px 8px 8px 14px;border-radius:16px;max-width:520px}
+#zoomBtns{position:absolute;z-index:500;left:12px;top:max(50%,230px);transform:translateY(-50%);display:flex;flex-direction:column;border-radius:14px;overflow:hidden;padding:0}
+#zoomBtns button{width:48px;height:48px;font-size:24px;font-weight:500;color:#fff;background:none;border:0}
+#zoomBtns button + button{border-top:.5px solid rgba(255,255,255,.14)}
+#zoomBtns button:active{background:rgba(255,255,255,.12)}
+body.map-off #zoomBtns{display:none!important}
+/* 지도가 보일 때 속도: 주소 아래, 숫자만 크게 */
+body.mode-track:not(.map-off) #speedo{left:12px;bottom:auto;top:var(--spTop,84px);min-width:72px;padding:6px 14px;align-items:center}
+body.mode-track:not(.map-off) #speedo b{font-size:calc(44px * var(--fsS,1));line-height:1.05;font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif}
+body.mode-track:not(.map-off) #speedo span, body.mode-track:not(.map-off) #speedo small{display:none!important}
+/* 경로 칩: 다음 회전 안내 */
+.rch-turn{flex:none;width:44px;height:44px;border-radius:12px;background:var(--turn,#1f6feb);display:grid;place-items:center;color:#fff}
+.rch-turn svg{width:30px;height:30px}
+.rch-turn[hidden]{display:none}
+#routeChip{position:absolute;z-index:520;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;padding:8px 8px 8px 14px;border-radius:16px;max-width:520px}
 #routeChip[hidden]{display:none}
 .rch-txt{flex:1;min-width:0}
 .rch-txt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -475,13 +543,13 @@ body:not(.mode-track) #fabDest, body.no-dest #fabDest{display:none!important}
 /* 밤에 화면 어둡게 */
 #dimmer{position:fixed;inset:-50px;background:#000;opacity:0;pointer-events:none;z-index:1500;transition:opacity 1s}
 /* 다음 곡 */
-#spUpNext{display:flex;align-items:center;gap:10px;margin-top:2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.07);font-size:14px;min-width:0}
+#spUpNext{display:flex;align-items:center;gap:10px;margin-top:2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.07);font-size:calc(14px * var(--fsM,1));min-width:0}
 #spUpNext span{flex:none;font-size:11px;font-weight:700;color:rgba(235,235,245,.6);text-transform:uppercase}
 #spUpNext b{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @container (max-height: 300px){ #spUpNext{display:none!important} }
 .sp-now{touch-action:pan-y}
 /* 비 예보 */
-#wxSoon{font-size:min(6.8cqw,10cqh);font-weight:700;color:#ffd43b;margin-top:2px;max-width:100%}
+#wxSoon{font-size:calc(min(6.8cqw,10cqh) * var(--fsW,1));font-weight:700;color:#ffd43b;margin-top:2px;max-width:100%}
 /* 내 위치 아이콘: 도는 부분/항상 똑바른 부분 */
 .car-marker{position:relative;transition:none!important;will-change:auto}
 .car-marker .me-rot,.car-marker .me-up{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
@@ -496,9 +564,9 @@ body.lite .car-marker .me-rot{transition:none}
 body.map-off #map, body.map-off #mapFabs, body.map-off #placeChip, body.map-off #osmAttr{display:none!important}
 body.map-off #navPanel{container-type:size;background:#1c1c1e;cursor:pointer}
 body.map-off #speedo{display:flex!important;position:absolute;inset:0;width:auto;height:auto;min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;flex-direction:column;align-items:center;justify-content:center}
-body.map-off #speedo b{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-size:min(34cqw,50cqh);font-weight:700;line-height:1}
-body.map-off #speedo span{font-size:min(9cqw,13cqh);margin-top:2px}
-body.map-off #speedo::after{content:"눌러서 지도 켜기";font-size:min(6.5cqw,9cqh);color:#636366;margin-top:min(3cqh,8px);font-weight:500}
+body.map-off #speedo b{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-size:calc(min(34cqw,50cqh) * var(--fsS,1));font-weight:700;line-height:1}
+body.map-off #speedo span{font-size:calc(min(9cqw,13cqh) * var(--fsS,1));margin-top:2px}
+body.map-off #speedo::after{content:"눌러서 지도 켜기";font-size:calc(min(6.5cqw,9cqh) * var(--fsS,1));color:#636366;margin-top:min(3cqh,8px);font-weight:500}
 body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr);grid-template-rows:repeat(3,minmax(0,1fr));grid-template-areas:"music nav" "music clock" "music weather"}
 @media (max-aspect-ratio:1/1){
   body.map-off.mode-track #app{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,80fr) minmax(0,20fr);grid-template-areas:"music music music" "clock nav weather"}
@@ -571,10 +639,11 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
     </div>
 
     <div id="routeChip" class="glass" hidden>
-      <div class="rch-txt"><b id="rchName"></b><small id="rchInfo"></small></div>
+      <div class="rch-turn" id="rchTurn" hidden></div><div class="rch-txt"><b id="rchName"></b><small id="rchInfo"></small></div>
       <button data-a="nav" aria-label="네이버 지도로 안내">▶</button><button data-a="share" aria-label="도착 예정 공유">💬</button><button data-a="close" aria-label="경로 지우기">✕</button>
     </div>
     <div id="placeChip" class="glass">📍 위치 확인 중…</div>
+    <div id="zoomBtns" class="glass"><button data-z="1" aria-label="확대">＋</button><button data-z="-1" aria-label="축소">－</button></div>
     <div id="speedo"><b id="speedVal">0</b><span>km/h</span><small id="tripLine"></small></div>
     <div id="osmAttr" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 
@@ -654,6 +723,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
 
   <!-- ══════════ 날씨 ══════════ -->
   <section id="weatherPanel" class="panel">
+    <div id="wxFx" class="wx-fx" aria-hidden="true"></div>
     <div id="wxPlace">현재 위치</div>
     <div class="wx-main"><span id="wxIcon">⛅</span><span id="wxTemp">--°</span></div>
     <div id="wxDesc">날씨 불러오는 중</div>
@@ -680,7 +750,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
       <div class="grp">
         <div class="row"><span>지도 스타일</span><div class="seg" data-key="mapStyle"><button data-v="naver">네이버 느낌</button><button data-v="apple">애플 느낌</button><button data-v="google">구글 느낌</button></div></div>
         <div class="row"><span>지도 색</span><div class="seg" data-key="theme"><button data-v="auto">자동</button><button data-v="light">밝게</button><button data-v="dark">어둡게</button></div></div>
-        <div class="row"><span>확대</span><div class="seg" data-key="zoomMode"><button data-v="auto">속도 맞춤</button><button data-v="near">가까이</button><button data-v="mid">보통</button><button data-v="far">넓게</button></div></div>
+        <div class="row"><span>확대<small>고르면 ＋/－로 바꾼 확대가 풀려요</small></span><div class="seg" data-key="zoomMode"><button data-v="auto">속도 맞춤</button><button data-v="near">가까이</button><button data-v="mid">보통</button><button data-v="far">넓게</button></div></div>
         <label class="row"><span>진행 방향으로 지도 돌리기<small>켜면 지도를 손으로 끌 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="headingUp"></label>
         <label class="row"><span>지도 끄기<small>음악 화면이 커지고 속도만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="mapOff"></label>
         <label class="row"><span>편의점·병원·주유소·카페 아이콘</span><input type="checkbox" class="ios-toggle" data-key="showPoi"></label>
@@ -727,6 +797,15 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
         <label class="row"><span>가벼운 화면<small>구형 기기용 · 흐림 효과 끄기</small></span><input type="checkbox" class="ios-toggle" data-key="lite"></label>
       </div>
 
+      <div class="grp-title">글자 크기</div>
+      <div class="grp">
+        <div class="row rng-row"><span>음악</span><input type="range" class="ios-range" data-key="fsMusic" min="70" max="150" step="5"><b class="rng-v" data-for="fsMusic"></b></div>
+        <div class="row rng-row"><span>시계</span><input type="range" class="ios-range" data-key="fsClock" min="70" max="150" step="5"><b class="rng-v" data-for="fsClock"></b></div>
+        <div class="row rng-row"><span>속도</span><input type="range" class="ios-range" data-key="fsSpeed" min="70" max="150" step="5"><b class="rng-v" data-for="fsSpeed"></b></div>
+        <div class="row rng-row"><span>날씨</span><input type="range" class="ios-range" data-key="fsWeather" min="70" max="150" step="5"><b class="rng-v" data-for="fsWeather"></b></div>
+        <button class="row link" id="fsReset">글자 크기 원래대로</button>
+      </div>
+
       <div class="grp-title">음악</div>
       <div class="grp">
         <label class="row"><span>플레이리스트 보기<small>칸이 충분히 클 때만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="showPlaylists"></label>
@@ -741,6 +820,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
         <label class="row"><span>24시간제</span><input type="checkbox" class="ios-toggle" data-key="clock24"></label>
         <label class="row"><span>초 표시</span><input type="checkbox" class="ios-toggle" data-key="clockSeconds"></label>
         <label class="row"><span>날짜 표시</span><input type="checkbox" class="ios-toggle" data-key="showDate"></label>
+        <label class="row"><span>날씨 배경 움직이기<small>비·눈·햇빛 그림 · 끄면 멈춘 그림</small></span><input type="checkbox" class="ios-toggle" data-key="wxAnim"></label>
         <label class="row"><span>미세먼지 표시</span><input type="checkbox" class="ios-toggle" data-key="showAir"></label>
       </div>
 
@@ -754,7 +834,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
             <label for="cfgNavMode">화면 방식</label>
             <select id="cfgNavMode">
               <option value="track">내 위치 지도 (위젯용)</option>
-              <option value="builtin">내장 내비게이션 (길찾기·음성 안내)</option>
+              <option value="builtin">(예전) 내장 내비게이션</option>
               <option value="app">네이버 지도 앱 실행 버튼</option>
             </select>
           </div>
@@ -763,16 +843,16 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
             <input type="text" id="cfgSpotify" autocomplete="off" spellcheck="false">
             <div class="hint">Spotify 앱 설정의 Redirect URI: <code id="redirectHint"></code></div>
           </div>
-          <div class="field">
+          <div class="field legacy-only">
             <label for="cfgNaver">네이버 지도 Client ID (내장 내비용, 선택)</label>
             <input type="text" id="cfgNaver" placeholder="비워두면 OpenStreetMap" autocomplete="off" spellcheck="false">
             <div class="hint">Web 서비스 URL: <code id="originHint"></code></div>
           </div>
-          <div class="field">
+          <div class="field legacy-only">
             <label for="cfgProxy">길찾기 프록시 주소 (내장 내비용, 선택)</label>
             <input type="text" id="cfgProxy" placeholder="https://carplay-proxy.○○○.workers.dev" autocomplete="off" spellcheck="false">
           </div>
-          <label class="row"><span>음성 안내 (내장 내비)</span><input type="checkbox" class="ios-toggle" data-key="voice"></label>
+          <label class="row legacy-only"><span>음성 안내 (내장 내비)</span><input type="checkbox" class="ios-toggle" data-key="voice"></label>
           <button class="row link danger" id="clearPlaces">집·회사·최근 기록 지우기</button>
           <div class="hint" style="margin-top:6px">고급 설정을 바꾸면 '완료'를 누를 때 화면이 새로고침돼요.</div>
         </div>
@@ -818,7 +898,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-28 v11'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-28 v14'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -829,7 +909,9 @@ const DEFAULT_CONFIG = {
   headingUp: false,      // 진행 방향으로 지도 회전
   trail: true,           // 지나온 길 표시
   showSpeed: true, showPlace: true,
-  szMap: 50, szBottom: 15, szMapW: 62, // 칸 비율 '직접' (%)
+  szMap: 50, szBottom: 15, szMapW: 62,
+  fsMusic: 100, fsClock: 100, fsSpeed: 100, fsWeather: 100, // 글자 크기(%)
+  wxAnim: true,          // 날씨 배경 움직이기 // 칸 비율 '직접' (%)
   mapStyle: 'apple',     // naver | apple | google (지도 색 느낌)
   layout: 'balance',     // map | balance | music  (칸 비율)
   accent: '#0a84ff',     // 강조 색
@@ -851,8 +933,9 @@ const DEFAULT_CONFIG = {
   mapOffset: true,       // 내 위치를 화면 아래쪽에 (앞쪽을 넓게)
   showSignals: true,     // 신호등 아이콘 (OpenStreetMap 데이터)
   destRoute: true,       // 목적지 버튼 (경로 표시)
-  autoNav: true,         // 목적지 고르면 네이버 지도 안내 바로 시작
-  etaShare: true,        // 도착 예정 공유 버튼   // 음악 칸 밀어서 곡 넘기기 / 앨범 두 번 눌러 재생·정지
+  autoNav: false,        // 목적지 고르면 네이버 지도 안내 바로 시작 (기본 꺼짐)
+  etaShare: true,
+  turnByTurn: false,     // 다음 회전 안내 (뺌)        // 도착 예정 공유 버튼   // 음악 칸 밀어서 곡 넘기기 / 앨범 두 번 눌러 재생·정지
   hAdjust: 0,            // 홈 화면 앱 화면 높이 미세 조정(px)
   naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
@@ -869,6 +952,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem('cp.' + k, JSON.stringify(v)); } catch {} },
   del(k) { try { localStorage.removeItem('cp.' + k); } catch {} }
 };
+LS.get('cfgV14') || (() => { const c = LS.get('config', {}); c.autoNav = false; c.turnByTurn = false; LS.set('config', c); LS.set('cfgV14', 1); })();
 const CFG = { ...DEFAULT_CONFIG };
 for (const [k, v] of Object.entries(LS.get('config', {}) || {})) if (v !== '' && v != null) CFG[k] = v;
 if (!['track', 'builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'track';
@@ -1331,6 +1415,7 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
     });
     this.map.touchZoomRotate.disableRotation();
     this.map.on('dragstart', onUserMapMove);
+    this.map.on('zoomend', e => { if (e.originalEvent && CFG.navMode === 'track') setUserZoom(this.map.getZoom()); }); // 두 손가락 확대·축소도 기억
     this.map.on('click', onMapClick);
     this.map.on('style.load', () => this.addOverlays());
     this.map.on('styleimagemissing', e => {
@@ -1499,8 +1584,17 @@ function followCamera(p, force) {
   let z = null;
   const kmh = S.speed * 3.6;
   if (S.nav) z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15;
-  else if (CFG.navMode === 'track') z = ({ near: 17, mid: 15, far: 13 })[CFG.zoomMode] ?? (kmh < 15 ? 16 : kmh < 60 ? 15 : kmh < 100 ? 14 : 13);
+  else if (CFG.navMode === 'track') z = S.userZoom ?? ({ near: 17, mid: 15, far: 13 })[CFG.zoomMode] ?? (kmh < 15 ? 16 : kmh < 60 ? 15 : kmh < 100 ? 14 : 13);
   MV.panTo(p, z);
+}
+S.userZoom = LS.get('userZoom', null); // ＋/－나 두 손가락으로 바꾼 확대는 계속 유지
+function setUserZoom(z) { S.userZoom = clamp(Math.round(z * 2) / 2, 3, 19); LS.set('userZoom', S.userZoom); }
+function zoomBy(dz) {
+  if (!MV?.map) return;
+  const z = clamp(Math.round(MV.map.getZoom()) + dz, 3, 19); setUserZoom(z);
+  if (S.follow && S.pos && !S.nav) followCamera(S.pos, true);
+  else if (MV.kind === 'gl') MV.map.easeTo({ zoom: z, duration: 300 });
+  else if (MV.map.setZoom) MV.map.setZoom(z);
 }
 function onMapClick() { $('#searchInput').blur(); hideResults(); }
 
@@ -2057,9 +2151,11 @@ async function updateWeather(p) {
       }
       $('#wxRange').textContent = `최고:${Math.round(d.temperature_2m_max[0])}° 최저:${Math.round(d.temperature_2m_min[0])}°${pop != null && pop >= 30 ? ` · ☔${pop}%` : ''}`;
       const wc = c.weather_code, wp = $('#weatherPanel');
-      wp.classList.remove('wx-clear', 'wx-cloud', 'wx-rain', 'wx-snow');
-      wp.classList.add(wc <= 1 ? 'wx-clear' : wc <= 48 ? 'wx-cloud' : ((wc >= 71 && wc <= 77) || wc === 85 || wc === 86) ? 'wx-snow' : 'wx-rain');
+      const kind = wxKind(wc);
+      wp.classList.remove('wx-clear', 'wx-cloud', 'wx-rain', 'wx-snow', 'wx-fog', 'wx-thunder');
+      wp.classList.add('wx-' + kind);
       wp.classList.toggle('night', !c.is_day);
+      renderWxFx(kind, !c.is_day);
     } else $('#wxDesc').textContent = '날씨 정보 없음';
     if (aq.value?.current) {
       const c = aq.value.current;
@@ -2674,6 +2770,16 @@ async function startTrackRoute(dest) {
   } catch (e) { if (S.troute === T) toast('경로를 그리지 못했어요 (' + e.message + ')'); }
   renderRouteChip();
 }
+async function rerouteTrack(fix) {
+  const T = S.troute; T.busy = true; T.rerouteAt = Date.now();
+  try {
+    const r = prepareRoute(await routeOSRM(fix, T.dest));
+    if (S.troute !== T) return;
+    Object.assign(T, { route: r, lastIdx: 0, s: 0, offSince: 0 });
+    MV?.setRoute(r.path); renderRouteChip();
+  } catch (e) { console.warn('reroute', e); } finally { T.busy = false; }
+}
+function trackNextGuide(T) { return T.route?.guides.find(g => g.d > T.s + 3); }
 function trackRemain() {
   const T = S.troute, R = T?.route; if (!R) return null;
   const rem = Math.max(0, R.total - T.s), sec = R.total ? R.duration * rem / R.total : 0;
@@ -2682,14 +2788,29 @@ function trackRemain() {
 function renderRouteChip() {
   const T = S.troute, el = $('#routeChip');
   if (!T || CFG.navMode !== 'track' || !CFG.destRoute) { el.hidden = true; return; }
-  el.hidden = false; $('#rchName').textContent = '🏁 ' + T.dest.name;
-  const r = trackRemain();
-  $('#rchInfo').textContent = r ? `${fmtDist(r.rem)} · ${fmtClock(r.eta)} 도착 예정` : '경로 계산 중…';
+  el.hidden = false;
+  const r = trackRemain(), g = trackNextGuide(T), ti = $('#rchTurn');
+  if (g && CFG.turnByTurn) { // 다음 회전 안내
+    ti.hidden = false; ti.innerHTML = TURN_ICONS[g.kind] || TURN_ICONS.straight;
+    $('#rchName').textContent = `${fmtDist(g.d - T.s)} · ${g.kind === 'dest' ? '도착 ' + T.dest.name : g.text}`;
+    $('#rchInfo').textContent = `🏁 ${fmtClock(r.eta)} 도착 · ${fmtDist(r.rem)} 남음`;
+  } else {
+    ti.hidden = true; $('#rchName').textContent = '🏁 ' + T.dest.name;
+    $('#rchInfo').textContent = r ? `${fmtDist(r.rem)} · ${fmtClock(r.eta)} 도착 예정` : '경로 계산 중…';
+  }
 }
 function updateTrackRoute(fix) {
   const T = S.troute; if (!T?.route) return;
-  const R = T.route, snap = snapToRoute(R, fix, T.lastIdx);
-  if (snap.d < 70) { T.lastIdx = snap.i; T.s = Math.max(T.s, snap.s); if (!CFG.mapOff) MV?.setProgress(snap.i, snap.point); }
+  const R = T.route, snap = snapToRoute(R, fix, T.lastIdx), now = Date.now();
+  if (snap.d < 40) { T.offSince = 0; T.lastIdx = snap.i; T.s = Math.max(T.s, snap.s); if (!CFG.mapOff) MV?.setProgress(snap.i, snap.point); }
+  else if ((fix.acc || 0) < 40) {
+    // 경로 이탈 판단: GPS는 빌딩 사이에서 몇 초씩 30~50m 튀므로 한 번 벗어났다고 바로 다시 계산하지 않음
+    //  · 120m 넘게 벗어나면 바로 (확실히 다른 길)
+    //  · 40m 넘게 벗어난 상태가 3초 이어지면 (튀는 값은 보통 1~2초)
+    T.offSince = T.offSince || now;
+    const sure = snap.d > 120 || now - T.offSince > 3000;
+    if (sure && now - (T.rerouteAt || 0) > 10000 && !T.busy) rerouteTrack(fix); // 무료 길찾기 서버라 10초에 한 번까지만
+  }
   if (R.total - T.s < 60 || hav(fix, T.dest) < 50) { clearTrackRoute(); return; } // 도착
   renderRouteChip();
 }
@@ -2723,6 +2844,33 @@ async function maybeLoadSignals(p) {
   SIG.fails++; SIG.busy = false;
 }
 
+/* 날씨 배경 그림: 비·눈·해·달·구름·안개·번개 (움직임은 CSS로만 → 가벼움) */
+function wxKind(wc) {
+  if (wc <= 1) return 'clear';
+  if (wc <= 3) return 'cloud';
+  if (wc === 45 || wc === 48) return 'fog';
+  if ((wc >= 71 && wc <= 77) || wc === 85 || wc === 86) return 'snow';
+  if (wc >= 95) return 'thunder';
+  return 'rain';
+}
+function renderWxFx(kind, night) {
+  const fx = $('#wxFx'); if (!fx) return;
+  fx.classList.toggle('still', !CFG.wxAnim);
+  const key = kind + (night ? '-n' : ''); if (fx.dataset.k === key) return; fx.dataset.k = key;
+  const R = (a, b) => (a + Math.random() * (b - a)).toFixed(2), N = (n, f) => Array.from({ length: n }, f).join('');
+  let s = '';
+  if (kind === 'clear') s = night ? '<i class="fx-moon"></i>' + N(22, () => `<i class="fx-star" style="left:${R(2, 96)}%;top:${R(3, 92)}%;animation-delay:-${R(0, 3)}s;opacity:${R(.4, 1)};transform:scale(${R(.7, 1.6)})"></i>`)
+    : '<i class="fx-rays"></i><i class="fx-sun"></i>';
+  else if (kind === 'cloud') s = (night ? '' : '<i class="fx-sun" style="opacity:.45"></i>') + N(3, (_, i) => `<i class="fx-cloud" style="top:${[4, 38, 70][i]}%;animation-duration:${R(28, 46)}s;animation-delay:-${R(0, 40)}s"></i>`);
+  else if (kind === 'fog') s = N(3, (_, i) => `<i class="fx-fog" style="top:${i * 30 + 5}%;animation-delay:-${i * 4}s"></i>`);
+  else if (kind === 'rain' || kind === 'thunder')
+    s = N(3 * 1, (_, i) => `<i class="fx-cloud" style="top:${[0, 12, 4][i]}%;opacity:.7;animation-duration:${R(40, 60)}s;animation-delay:-${R(0, 50)}s"></i>`) +
+      N(kind === 'thunder' ? 42 : 34, () => `<i class="fx-drop" style="left:${R(-5, 118)}%;--y:${R(20, 110)};animation-duration:${R(.55, .9)}s;animation-delay:-${R(0, 1)}s;opacity:${R(.35, .9)}"></i>`) +
+      (kind === 'thunder' ? '<i class="fx-flash"></i>' : '');
+  else if (kind === 'snow') s = N(30, () => { const z = R(2.5, 6.5); return `<i class="fx-flake" style="left:${R(-4, 100)}%;--y:${R(10, 105)};width:${z}px;height:${z}px;opacity:${R(.55, 1)};animation-duration:${R(5, 10)}s;animation-delay:-${R(0, 10)}s"></i>`; });
+  fx.innerHTML = s;
+}
+
 // 밤에 화면 어둡게
 function applyDim() { $('#dimmer').style.opacity = (Number(CFG.nightDim) > 0 && isDarkMap()) ? Number(CFG.nightDim) / 100 : 0; }
 
@@ -2731,6 +2879,7 @@ let advSnapshot = null;
 function applyDisplay() {
   const b = document.body;
   b.dataset.layout = CFG.layout;
+  [['--fsM', 'fsMusic'], ['--fsC', 'fsClock'], ['--fsS', 'fsSpeed'], ['--fsW', 'fsWeather']].forEach(([v, k]) => b.style.setProperty(v, (Number(CFG[k]) || 100) / 100));
   if (CFG.layout === 'custom') { // 직접 조절한 비율
     const m = +CFG.szMap || 50, bt = +CFG.szBottom || 15, w = +CFG.szMapW || 62;
     b.style.setProperty('--p1', m + 'fr'); b.style.setProperty('--p3', bt + 'fr'); b.style.setProperty('--p2', Math.max(15, 100 - m - bt) + 'fr');
@@ -2755,10 +2904,12 @@ function setCfg(k, v) {
   applyDisplay();
   if (k === 'theme') applyTheme();
   if (['meIcon', 'meColor', 'meSize'].includes(k)) MV?.refreshMe?.();
-  if (k === 'zoomMode' && S.pos) followCamera(S.pos, true);
+  if (k === 'zoomMode') { S.userZoom = null; LS.del('userZoom'); if (S.pos) followCamera(S.pos, true); }
   if (k === 'headingUp' && MV) applyHeadingUp();
   if (k === 'trail' && !v) MV?.clearTrail?.();
   if (k === 'mapStyle') MV?.restyle?.();
+  if (k === 'turnByTurn') renderRouteChip();
+  if (k === 'wxAnim') $('#wxFx')?.classList.toggle('still', !v);
   if (k === 'layout') setTimeout(() => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); }, 80);
   if (k === 'keepAwake') { if (v) keepAwake(); else { try { wakeLock?.release(); } catch {} wakeLock = null; } }
   if (k === 'clock24' || k === 'clockSeconds') tickClock();
@@ -2797,6 +2948,8 @@ function advValues() {
   return { navMode: $('#cfgNavMode').value, naverKeyId: $('#cfgNaver').value.trim(), proxyUrl: $('#cfgProxy').value.trim().replace(/\/+$/, ''), spotifyClientId: $('#cfgSpotify').value.trim() };
 }
 function openSettings() {
+  $('#settings').classList.toggle('show-legacy', CFG.navMode === 'builtin');
+  $('#cfgNavMode').onchange = e => $('#settings').classList.toggle('show-legacy', e.target.value === 'builtin');
   $('#cfgNavMode').value = CFG.navMode; $('#cfgNaver').value = CFG.naverKeyId; $('#cfgProxy').value = CFG.proxyUrl; $('#cfgSpotify').value = CFG.spotifyClientId;
   $('#originHint').textContent = location.origin; $('#redirectHint').textContent = redirectUri();
   advSnapshot = JSON.stringify(advValues());
@@ -2822,9 +2975,10 @@ function closeSettings() {
 function bindSettings() {
   const box = $('#settings');
   box.addEventListener('change', e => { const t = e.target; if (t.matches('.ios-toggle[data-key]')) setCfg(t.dataset.key, t.checked); });
+  $('#fsReset').onclick = () => { ['fsMusic', 'fsClock', 'fsSpeed', 'fsWeather'].forEach(k => setCfg(k, 100)); renderSettingsControls(); };
   box.addEventListener('input', e => { // 비율 슬라이더: 움직이면 바로 '직접'으로
     const t = e.target; if (!t.matches('.ios-range[data-key]')) return;
-    CFG.layout = 'custom'; LS.set('config', { ...LS.get('config', {}), layout: 'custom' });
+    if (t.dataset.key.startsWith('sz')) { CFG.layout = 'custom'; LS.set('config', { ...LS.get('config', {}), layout: 'custom' }); }
     setCfg(t.dataset.key, +t.value); renderSettingsControls();
     clearTimeout(t._rz); t._rz = setTimeout(() => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); }, 120);
   });
@@ -2841,6 +2995,9 @@ function bindSettings() {
     const d = +b.dataset.h; setCfg('hAdjust', d === 0 ? 0 : (Number(CFG.hAdjust) || 0) + d);
   });
   $('#fabPark').onclick = e => { e.stopPropagation(); onParkBtn(); };
+  $('#zoomBtns').addEventListener('click', e => { e.stopPropagation(); const b = e.target.closest('[data-z]'); if (b) zoomBy(+b.dataset.z); });
+  const placeTop = () => { const c = $('#placeChip'); const show = c.offsetParent !== null; document.body.style.setProperty('--spTop', (show ? c.offsetTop + c.offsetHeight + 8 : 12) + 'px'); };
+  try { new ResizeObserver(placeTop).observe($('#placeChip')); } catch {} placeTop(); setInterval(placeTop, 5000);
   $('#fabDest').onclick = e => { e.stopPropagation(); openDestSheet(); };
   $('#routeChip').addEventListener('click', e => {
     e.stopPropagation(); const a = e.target.closest('button')?.dataset.a, T = S.troute;
