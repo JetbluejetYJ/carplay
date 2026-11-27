@@ -449,6 +449,18 @@ body.map-off #speedo.over b{color:#ff453a!important;animation:overpulse 1s ease-
 #fabPark .p-ico{font-weight:800;font-size:20px;line-height:1;color:#e5e5ea;font-family:-apple-system,sans-serif}
 #fabPark.has-park .p-ico{color:#fff;background:#1c7ed6;border-radius:6px;padding:2px 6px}
 #carMarker{z-index:5}
+#routeChip{position:absolute;z-index:520;left:96px;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;padding:8px 8px 8px 14px;border-radius:16px;max-width:520px}
+#routeChip[hidden]{display:none}
+.rch-txt{flex:1;min-width:0}
+.rch-txt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rch-txt small{display:block;font-size:12px;color:#aeaeb2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#routeChip button{flex:none;width:40px;height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.12);font-size:16px;color:#fff}
+#routeChip button[data-a="nav"]{background:#03c75a}
+body.no-etashare #routeChip [data-a="share"]{display:none}
+body:not(.mode-track) #fabDest, body.no-dest #fabDest{display:none!important}
+.park-photo{width:100%;max-height:40vh;object-fit:cover;border-radius:12px;margin-top:10px;display:block}
+.park-meta{font-size:13px;color:#8e8e93;margin-top:6px;line-height:1.45}
+.park-big{font-size:20px;font-weight:700}
 .park-pin{z-index:1;width:32px;height:32px;border-radius:10px;background:#1c7ed6;color:#fff;font:800 18px/1 -apple-system,sans-serif;display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.4)}
 /* 알림 배너 */
 #banner{position:fixed;z-index:2500;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);width:min(92vw,440px);display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:22px;background:rgba(44,44,46,.94);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.45);animation:sheetup .3s}
@@ -547,11 +559,16 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
       <button class="fab glass" id="fabLocate" aria-label="현재 위치 따라가기"><svg viewBox="0 0 24 24"><path class="loc-line" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="loc-fill" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="currentColor"/></svg></button>
       <button class="fab glass" id="fabSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="fab glass" id="fabTraffic" aria-label="실시간 교통" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg></button>
+      <button class="fab glass" id="fabDest" aria-label="목적지"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2.5 4L16 12H5"/></svg></button>
       <button class="fab glass" id="fabPark" aria-label="주차 위치"><span class="p-ico">P</span></button>
       <button class="fab glass" id="fabMapOff" aria-label="지도 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M3 3l18 18"/></svg></button>
       <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
 
+    <div id="routeChip" class="glass" hidden>
+      <div class="rch-txt"><b id="rchName"></b><small id="rchInfo"></small></div>
+      <button data-a="nav" aria-label="네이버 지도로 안내">▶</button><button data-a="share" aria-label="도착 예정 공유">💬</button><button data-a="close" aria-label="경로 지우기">✕</button>
+    </div>
     <div id="placeChip" class="glass">📍 위치 확인 중…</div>
     <div id="speedo"><b id="speedVal">0</b><span>km/h</span><small id="tripLine"></small></div>
     <div id="osmAttr" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
@@ -661,10 +678,27 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
         <label class="row"><span>진행 방향으로 지도 돌리기<small>켜면 지도를 손으로 끌 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="headingUp"></label>
         <label class="row"><span>지도 끄기<small>음악 화면이 커지고 속도만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="mapOff"></label>
         <label class="row"><span>편의점·병원·주유소·카페 아이콘</span><input type="checkbox" class="ios-toggle" data-key="showPoi"></label>
+        <label class="row"><span>내 위치를 아래쪽에<small>앞쪽 길을 더 넓게 보여줘요</small></span><input type="checkbox" class="ios-toggle" data-key="mapOffset"></label>
+        <label class="row"><span>신호등 표시<small>OpenStreetMap에 등록된 신호등만 · 신호 색은 알 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="showSignals"></label>
         <label class="row"><span>지나온 길 표시</span><input type="checkbox" class="ios-toggle" data-key="trail"></label>
         <label class="row"><span>속도계</span><input type="checkbox" class="ios-toggle" data-key="showSpeed"></label>
         <label class="row"><span>지금 달리는 도로 이름</span><input type="checkbox" class="ios-toggle" data-key="showPlace"></label>
         <button class="row link" id="clearTrail">지나온 길 지우기</button>
+      </div>
+
+      <div class="grp-title">주차</div>
+      <div class="grp">
+        <label class="row"><span>자동 주차 저장<small>차에서 내려 걸어가거나 지하주차장에 들어가면 조용히 저장 (알림 없음)</small></span><input type="checkbox" class="ios-toggle" data-key="autoPark"></label>
+        <label class="row"><span>주차 후 걸어간 길 기록<small>차로 돌아갈 때 지도에 초록 점선으로</small></span><input type="checkbox" class="ios-toggle" data-key="parkWalkTrail"></label>
+        <label class="row"><span>주차 시간 표시</span><input type="checkbox" class="ios-toggle" data-key="parkTimer"></label>
+        <div class="row"><span>무료 주차 시간</span><div class="seg" data-key="parkFreeMin"><button data-v="0">없음</button><button data-v="30">30분</button><button data-v="60">1시간</button><button data-v="120">2시간</button><button data-v="180">3시간</button></div></div>
+      </div>
+
+      <div class="grp-title">목적지</div>
+      <div class="grp">
+        <label class="row"><span>목적지 버튼<small>대시보드 지도에 전체 경로 표시 (교통 미반영)</small></span><input type="checkbox" class="ios-toggle" data-key="destRoute"></label>
+        <label class="row"><span>고르면 네이버 지도 안내 바로 시작<small>CarPlay 네이버 지도에서 안내가 시작돼요</small></span><input type="checkbox" class="ios-toggle" data-key="autoNav"></label>
+        <label class="row"><span>도착 예정 공유 버튼</span><input type="checkbox" class="ios-toggle" data-key="etaShare"></label>
       </div>
 
       <div class="grp-title">운전</div>
@@ -775,7 +809,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-27 iOS v9'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-28 v10'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -798,7 +832,16 @@ const DEFAULT_CONFIG = {
   restAlert: true,       // 2시간 연속 운전 휴식 알림
   nightDim: 0,           // 밤에 화면 어둡게 (0/25/45 %)
   showUpNext: true,      // 다음 곡 표시
-  musicGestures: true,   // 음악 칸 밀어서 곡 넘기기 / 앨범 두 번 눌러 재생·정지
+  musicGestures: true,
+  autoPark: true,        // 자동 주차 저장 (차에서 내려 걸어가면 / 지하주차장 진입 시) — 알림 없음
+  parkWalkTrail: true,   // 주차 후 걸어간 길 기록
+  parkTimer: true,       // 주차 시간 표시
+  parkFreeMin: 0,        // 무료 주차 시간(분), 0=사용 안 함
+  mapOffset: true,       // 내 위치를 화면 아래쪽에 (앞쪽을 넓게)
+  showSignals: true,     // 신호등 아이콘 (OpenStreetMap 데이터)
+  destRoute: true,       // 목적지 버튼 (경로 표시)
+  autoNav: true,         // 목적지 고르면 네이버 지도 안내 바로 시작
+  etaShare: true,        // 도착 예정 공유 버튼   // 음악 칸 밀어서 곡 넘기기 / 앨범 두 번 눌러 재생·정지
   hAdjust: 0,            // 홈 화면 앱 화면 높이 미세 조정(px)
   naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
@@ -1220,6 +1263,13 @@ function poiImage(id) {
   else { x.font = `${14 * r}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; x.fillText(g, S / 2, S / 2 + r); }
   return { img: x.getImageData(0, 0, S, S), pixelRatio: r };
 }
+function sigImage() { // 신호등 아이콘
+  const r = 2, W = 16 * r, H = 34 * r, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  x.fillStyle = '#1f1f1f'; x.strokeStyle = '#fff'; x.lineWidth = 2 * r;
+  x.beginPath(); x.roundRect ? x.roundRect(r, r, W - 2 * r, H - 2 * r, 5 * r) : x.rect(r, r, W - 2 * r, H - 2 * r); x.fill(); x.stroke();
+  [['#ff453a', 9], ['#ffd60a', 17], ['#30d158', 25]].forEach(([col, y]) => { x.beginPath(); x.arc(W / 2, y * r, 3.4 * r, 0, Math.PI * 2); x.fillStyle = col; x.fill(); });
+  return { img: x.getImageData(0, 0, W, H), pixelRatio: r };
+}
 async function loadMapLibre() {
   if (window.maplibregl) return;
   loadCss('https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css');
@@ -1242,7 +1292,11 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
     this.map.on('dragstart', onUserMapMove);
     this.map.on('click', onMapClick);
     this.map.on('style.load', () => this.addOverlays());
-    this.map.on('styleimagemissing', e => { if (POI_ICONS[e.id] && !this.map.hasImage(e.id)) { const { img, pixelRatio } = poiImage(e.id); this.map.addImage(e.id, img, { pixelRatio }); } });
+    this.map.on('styleimagemissing', e => {
+      if (this.map.hasImage(e.id)) return;
+      if (POI_ICONS[e.id]) { const { img, pixelRatio } = poiImage(e.id); this.map.addImage(e.id, img, { pixelRatio }); }
+      else if (e.id === 'sig-icon') { const { img, pixelRatio } = sigImage(); this.map.addImage(e.id, img, { pixelRatio }); }
+    });
     $('#osmAttr').innerHTML = ATTR_GL; $('#osmAttr').hidden = false;
   },
   addOverlays() {
@@ -1253,13 +1307,26 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
       m.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: rl, paint: { 'line-color': '#0b3a7a', 'line-width': 13 } });
       m.addLayer({ id: 'route', type: 'line', source: 'route', layout: rl, paint: { 'line-color': '#3b9bff', 'line-width': 8 } });
     }
-    this.syncTrail(); this.syncRoute();
+    if (!m.getSource('walk')) { m.addSource('walk', { type: 'geojson', data: EMPTY_FC }); m.addLayer({ id: 'walk', type: 'line', source: 'walk', layout: rl, paint: { 'line-color': '#30d158', 'line-width': 4, 'line-dasharray': [1.2, 1.6], 'line-opacity': .95 } }); }
+    if (!m.getSource('signals')) {
+      m.addSource('signals', { type: 'geojson', data: EMPTY_FC });
+      m.addLayer({ id: 'signals', type: 'symbol', source: 'signals', minzoom: 15, layout: { visibility: CFG.showSignals ? 'visible' : 'none', 'icon-image': 'sig-icon', 'icon-size': ['interpolate', ['linear'], ['zoom'], 15, .7, 18, 1], 'icon-allow-overlap': true, 'icon-ignore-placement': true } });
+    }
+    this.syncTrail(); this.syncRoute(); this.syncWalk(); m.getSource('signals').setData(this.sigFC || EMPTY_FC);
   },
+  setWalk(pts) { this.walkPts = pts || []; this.syncWalk(); },
+  syncWalk() { this.map?.getSource('walk')?.setData(CFG.parkWalkTrail ? this.line(this.walkPts || []) : EMPTY_FC); },
+  setSignals(fc) { this.sigFC = fc; this.map?.getSource('signals')?.setData(fc || EMPTY_FC); },
+  showSignalsLayer(on) { if (this.map?.getLayer('signals')) this.map.setLayoutProperty('signals', 'visibility', on ? 'visible' : 'none'); },
   line(c) { return c.length > 1 ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } } : EMPTY_FC; },
   syncRoute() { this.map?.getSource('route')?.setData(this.line(this.prog || this.route)); },
   syncTrail() { this.map?.getSource('trail')?.setData(this.line(this.trailPts)); },
-  panTo(p, zoom) { this.map.easeTo({ center: [p.lng, p.lat], zoom: zoom ?? this.map.getZoom(), bearing: headingUpActive() ? mapRot : 0, duration: 800, easing: t => t }); },
-  fit(points, pad) { const b = bbox(points); this.map.fitBounds([[b.w, b.s], [b.e, b.n]], { padding: pad, bearing: 0, duration: 600 }); },
+  panTo(p, zoom) { // 내 위치를 화면 아래쪽에 → 앞쪽 길을 넓게
+    const H = this.map.getContainer().clientHeight, low = CFG.mapOffset && S.follow && CFG.navMode === 'track';
+    this.map.easeTo({ center: [p.lng, p.lat], zoom: zoom ?? this.map.getZoom(), bearing: headingUpActive() ? mapRot : 0,
+      padding: { top: low ? Math.round(H * .42) : 0, bottom: 0, left: 0, right: 0 }, duration: 800, easing: t => t });
+  },
+  fit(points, pad) { this.map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); const b = bbox(points); this.map.fitBounds([[b.w, b.s], [b.e, b.n]], { padding: pad, bearing: 0, duration: 600 }); },
   setRoute(points) { this.route = points.map(p => [p.lng, p.lat]); this.prog = null; this.syncRoute(); },
   setProgress(i, pt) { this.prog = [[pt.lng, pt.lat], ...this.route.slice(i + 1)]; this.syncRoute(); },
   clearRoute() { this.route = []; this.prog = null; this.syncRoute(); },
@@ -1357,9 +1424,10 @@ async function switchToLeaflet() {
 function redrawMap() {
   if (!MV) return;
   MV.setParking?.(LS.get('parking'));
-  const R = S.nav?.route || S.preview?.route;
+  const R = S.nav?.route || S.preview?.route || S.troute?.route;
   if (R) MV.setRoute(R.path);
-  const d = S.nav?.dest || S.preview?.dest;
+  const d = S.nav?.dest || S.preview?.dest || S.troute?.dest;
+  MV.setWalk?.(LS.get('parkWalk', []));
   if (d) MV.setDest(d);
   if (S.pos) MV.setMe(S.pos, S.heading);
 }
@@ -1419,6 +1487,7 @@ function handlePosition(fix) {
   S.pos = fix;
   $('#speedVal').textContent = Math.round(S.speed * 3.6);
   updateSpeedAlert(); updateTrip(fix);
+  if (!S.sim && CFG.navMode !== 'app') { parkDetect(fix); updateTrackRoute(fix); maybeLoadSignals(fix); }
 
   let shown = fix, shownH = S.heading;
   if (S.nav) {
@@ -2398,21 +2467,220 @@ function actionSheet(title, bodyHtml, actions = []) {
 // 주차 위치
 function fmtAgo(t) { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? '방금' : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.floor(m / 60)}시간 ${m % 60}분 전` : `${Math.floor(m / 1440)}일 전`; }
 function renderParkBtn() { $('#fabPark').classList.toggle('has-park', !!LS.get('parking')); }
+/* ── 주차 위치: 저장/보기 ── */
+function setParking(p) { // 새 주차 위치 (사진·메모·걸어간 길은 새로 시작)
+  LS.set('parking', p); ['parkPhoto', 'parkMemo', 'parkWalk'].forEach(k => LS.del(k));
+  PK.walkOn = true; LS.set('parkWalkOn', true);
+  MV?.setParking?.(p); MV?.setWalk?.([]); renderParkBtn();
+}
+function clearParking() {
+  ['parking', 'parkPhoto', 'parkMemo', 'parkWalk', 'parkWalkOn'].forEach(k => LS.del(k)); PK.walkOn = false;
+  MV?.setParking?.(null); MV?.setWalk?.([]); renderParkBtn();
+}
 function saveParking() {
   const pos = S.realPos || S.pos; if (!pos) { toast('현재 위치를 아직 받지 못했어요.'); return; }
-  const p = { lat: pos.lat, lng: pos.lng, t: Date.now() };
-  LS.set('parking', p); MV?.setParking?.(p); renderParkBtn(); toast('🅿️ 지금 위치를 주차 위치로 저장했어요');
+  setParking({ lat: pos.lat, lng: pos.lng, t: Date.now(), auto: false });
+  toast('🅿️ 지금 위치를 주차 위치로 저장했어요');
 }
+function fmtElapsed(ms) { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간 ${m % 60}분`; }
 function onParkBtn() {
   const p = LS.get('parking'); if (!p) { saveParking(); return; }
   const here = S.realPos || S.pos, d = here ? fmtDist(hav(here, p)) : '-';
-  actionSheet('주차 위치', `🅿️ 여기서 <b>${d}</b> · ${fmtAgo(p.t)} 저장`, [
+  const photo = LS.get('parkPhoto'), memo = LS.get('parkMemo'), walk = LS.get('parkWalk', []);
+  let walkLen = 0; for (let i = 1; i < walk.length; i++) walkLen += hav({ lat: walk[i - 1][1], lng: walk[i - 1][0] }, { lat: walk[i][1], lng: walk[i][0] });
+  const how = { walk: '차에서 내려 걸어가는 걸 감지해 자동 저장', stay: '한자리에 오래 멈춘 걸 감지해 자동 저장', under: '지하주차장 진입을 감지해 자동 저장 (입구 위치)', hide: '정차 중 화면을 닫아서 자동 저장' }[p.how] || '직접 저장';
+  let timer = '';
+  if (CFG.parkTimer) {
+    const el = Date.now() - p.t, free = (Number(CFG.parkFreeMin) || 0) * 60000;
+    timer = `<div class="park-big">⏱ 주차 ${fmtElapsed(el)}째</div>` +
+      (free ? `<div class="park-meta" style="color:${el > free ? '#ff453a' : '#30d158'}">${el > free ? `무료 시간 ${fmtElapsed(el - free)} 초과` : `무료 시간 ${fmtElapsed(free - el)} 남음`}</div>` : '');
+  }
+  actionSheet('주차 위치', `${timer}
+    <div style="margin-top:${timer ? 10 : 0}px">🅿️ 여기서 <b>${d}</b> · ${fmtAgo(p.t)}</div>
+    <div class="park-meta">${how}${p.how === 'under' ? '<br>지하는 GPS가 안 잡혀서 정확한 자리는 사진·메모로 남겨두세요.' : ''}${walkLen > 20 && CFG.parkWalkTrail ? `<br>걸어간 길 ${fmtDist(walkLen)} 기록됨 (지도에 초록 점선)` : ''}</div>
+    ${memo ? `<div style="margin-top:10px;font-size:17px">✏️ <b>${esc(memo)}</b></div>` : ''}
+    ${photo ? `<img class="park-photo" src="${photo}" alt="주차 사진">` : ''}`, [
     { label: '네이버 지도로 걸어서 찾아가기', fn: () => openNmap('route/walk', { dlat: p.lat.toFixed(7), dlng: p.lng.toFixed(7), dname: '주차 위치' }) },
     { label: '지도에서 보기', fn: () => { if (!MV) return; onUserMapMove(); MV.panTo(p, 17); } },
+    { label: photo ? '📷 사진 다시 찍기' : '📷 주차 사진 찍기 (기둥 번호 등)', fn: takeParkPhoto },
+    { label: memo ? '✏️ 메모 고치기' : '✏️ 메모 남기기 (예: B2 C-14)', fn: () => { const t = prompt('주차 메모', memo || ''); if (t != null) { t.trim() ? LS.set('parkMemo', t.trim()) : LS.del('parkMemo'); onParkBtn(); } } },
     { label: '지금 위치로 다시 저장', fn: saveParking },
-    { label: '주차 위치 지우기', danger: true, fn: () => { LS.del('parking'); MV?.setParking?.(null); renderParkBtn(); toast('주차 위치를 지웠어요'); } }
+    { label: '주차 위치 지우기', danger: true, fn: () => { clearParking(); toast('주차 위치를 지웠어요'); } }
   ]);
 }
+function takeParkPhoto() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment');
+  inp.onchange = async () => {
+    const f = inp.files?.[0]; if (!f) return;
+    try {
+      const bmp = await createImageBitmap(f), sc = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/jpeg', .7); LS.set('parkPhoto', url);
+      if (LS.get('parkPhoto') !== url) throw new Error('저장 공간 부족');
+      toast('📷 주차 사진을 저장했어요'); onParkBtn();
+    } catch (e) { toast('사진을 저장하지 못했어요: ' + e.message); }
+  };
+  inp.click();
+}
+
+/* ── 자동 주차 감지 (알림 없음, P 버튼 색만 바뀜) ──
+   · 15km/h 넘게 20초 이상 달린 뒤 멈춘 자리를 '후보'로 잡음
+   · 다시 달리면 신호대기·정체로 보고 후보를 버림
+   · 멈춘 뒤 걷는 속도(2~9km/h)로 40m 넘게 멀어지면 → 그 자리가 주차 위치
+   · 큰길 위가 아닌 곳에서 5분 넘게(어디서든 12분 넘게) 서 있으면 → 주차
+   · 천천히 달리다 GPS가 45초 넘게 끊기면 → 지하주차장 진입, 끊기기 직전 위치 저장
+   · 정차 중(20초↑) 화면을 닫으면 → 큰길 위가 아니면 저장
+   · 자동 저장된 자리 근처에서 다시 달리기 시작하면 → 차를 뺀 것으로 보고 지움 */
+const PK = { driving: false, fastSince: 0, cand: null, lastGood: null, walkOn: !!LS.get('parkWalkOn') };
+function onMajorRoad(p) {
+  try {
+    if (MV?.kind !== 'gl' || CFG.mapOff || !MV.map) return false;
+    const pt = MV.map.project([p.lng, p.lat]), c = MV.map.getCanvas(), W = c.clientWidth, H = c.clientHeight;
+    if (pt.x < 0 || pt.y < 0 || pt.x > W || pt.y > H) return false;
+    const layers = ['r-secondary', 'r-primary', 'r-trunk', 'r-motorway'].filter(id => MV.map.getLayer(id));
+    return layers.length > 0 && MV.map.queryRenderedFeatures([[pt.x - 10, pt.y - 10], [pt.x + 10, pt.y + 10]], { layers }).length > 0;
+  } catch { return false; }
+}
+function confirmPark(c, how) {
+  PK.driving = false; PK.cand = null; PK.fastSince = 0;
+  setParking({ lat: c.lat, lng: c.lng, t: c.t || Date.now(), auto: true, how });
+}
+function parkDetect(fix) {
+  const kmh = S.speed * 3.6, now = fix.t || Date.now(), good = (fix.acc || 0) <= 50;
+  if (good) PK.lastGood = { lat: fix.lat, lng: fix.lng, t: now, kmh };
+  if (kmh > 15 && good) {
+    PK.fastSince = PK.fastSince || now;
+    if (now - PK.fastSince > 20000 && !PK.driving) {
+      PK.driving = true; PK.cand = null;
+      if (PK.walkOn) { PK.walkOn = false; LS.del('parkWalkOn'); }
+      const park = LS.get('parking'); // 자동 저장한 자리에서 출발 → 지움
+      if (park && CFG.autoPark && park.auto && hav(park, fix) < 600 && now - park.t > 60000) clearParking();
+    }
+    if (PK.driving) PK.cand = null;
+  } else if (kmh <= 3) PK.fastSince = 0;
+  // 주차 후 걸어간 길
+  if (!PK.driving && PK.walkOn && CFG.parkWalkTrail && good && kmh < 12 && LS.get('parking')) {
+    const w = LS.get('parkWalk', []), last = w[w.length - 1];
+    if (!last || hav({ lat: last[1], lng: last[0] }, fix) > 6) { w.push([fix.lng, fix.lat]); if (w.length > 600) w.shift(); LS.set('parkWalk', w); MV?.setWalk?.(w); }
+  }
+  if (!CFG.autoPark || !PK.driving || !good) return;
+  if (kmh < 3 && (!PK.cand || hav(PK.cand, fix) > 25)) PK.cand = { lat: fix.lat, lng: fix.lng, t: now };
+  if (!PK.cand) return;
+  const away = hav(PK.cand, fix), stopped = now - PK.cand.t;
+  if (away > 40 && kmh >= 2 && kmh <= 9 && stopped > 15000) return confirmPark(PK.cand, 'walk');
+  if (away < 30 && stopped > 5 * 60e3 && !onMajorRoad(PK.cand)) return confirmPark(PK.cand, 'stay');
+  if (away < 30 && stopped > 12 * 60e3) return confirmPark(PK.cand, 'stay');
+}
+setInterval(() => { // 지하주차장: 천천히 달리다 GPS가 끊김
+  if (!CFG.autoPark || !PK.driving || !PK.lastGood || document.hidden || S.sim || CFG.navMode === 'app') return;
+  const g = PK.lastGood;
+  if (Date.now() - g.t > 45000 && g.kmh >= 3 && g.kmh < 25 && !onMajorRoad(g)) confirmPark(g, 'under');
+}, 10000);
+document.addEventListener('visibilitychange', () => { // 정차 중 화면을 닫음
+  if (document.visibilityState !== 'hidden' || !CFG.autoPark || !PK.driving || !PK.cand || S.sim) return;
+  if (Date.now() - PK.cand.t > 20000 && S.speed * 3.6 < 3 && !onMajorRoad(PK.cand)) confirmPark(PK.cand, 'hide');
+});
+
+/* ── 목적지: 대시보드 지도에 전체 경로 + 네이버 지도 안내 ── */
+S.troute = null;
+function openDestSheet() {
+  const favs = Favs.slots().filter(s => s.p).map(s => ({ ...s.p, name: s.p.name || s.label, icon: s.emoji }));
+  const rec = Places.recents().slice(0, 6).map(x => ({ ...x, icon: '🕘' }));
+  let items = [...favs, ...rec];
+  const m = document.createElement('div'); m.className = 'modal ios-modal';
+  m.innerHTML = `<div class="sheet ios-sheet"><div class="sheet-bar"><span></span><b>목적지</b><button>닫기</button></div><div class="sheet-scroll">
+    <form class="grp" style="margin-top:12px;display:flex;align-items:center;gap:8px;padding:0 14px" id="dsForm">🔍
+      <input id="dsInput" type="search" placeholder="주소나 장소 이름" enterkeyhint="search" autocomplete="off" style="flex:1;min-width:0;height:48px;border:0;outline:0;background:none;color:inherit;font-size:17px;-webkit-user-select:text;user-select:text"></form>
+    <div class="grp" style="margin-top:12px" id="dsList"></div>
+    <div style="font-size:12px;color:#8e8e93;margin:8px 4px;line-height:1.5">무료 지도 검색이라 상호명이 안 나오면 주소로 검색해 보세요. 대시보드 경로는 교통 정보 없이 그려져서 네이버 안내 경로와 다를 수 있어요.</div>
+    <div class="grp" style="margin-top:8px"><button class="row link" id="dsEdit">집·회사·즐겨찾기 편집</button></div></div></div>`;
+  const render = list => {
+    items = list;
+    m.querySelector('#dsList').innerHTML = list.length ? list.map((it, i) => `<button class="row" data-i="${i}" style="text-align:left"><span>${it.icon || '📍'} ${esc(it.name)}<small>${esc(it.addr || '')}${S.pos ? ' · ' + fmtDist(hav(S.pos, it)) : ''}</small></span></button>`).join('')
+      : '<div class="res-empty" style="padding:14px">결과가 없어요. 집·회사를 저장하거나 위에서 검색하세요</div>';
+  };
+  render(items);
+  m.querySelector('#dsForm').onsubmit = async e => {
+    e.preventDefault(); const q = m.querySelector('#dsInput').value.trim(); if (!q) return;
+    m.querySelector('#dsInput').blur(); m.querySelector('#dsList').innerHTML = '<div class="res-empty" style="padding:14px">검색 중…</div>';
+    try { const r = await searchNominatim(q); if (S.pos) r.sort((a, b) => hav(S.pos, a) - hav(S.pos, b)); render(r.slice(0, 12)); } catch { render([]); }
+  };
+  m.addEventListener('click', e => {
+    if (e.target === m || e.target.closest('.sheet-bar button')) { m.remove(); return; }
+    if (e.target.id === 'dsEdit') { m.remove(); openFavs(); return; }
+    const b = e.target.closest('[data-i]'); if (b) { m.remove(); startTrackRoute(items[+b.dataset.i]); }
+  });
+  document.body.appendChild(m);
+}
+async function startTrackRoute(dest) {
+  const from = S.realPos || S.pos; if (!from) { toast('현재 위치를 아직 받지 못했어요.'); return; }
+  dest = { name: dest.name, addr: dest.addr || '', lat: +dest.lat, lng: +dest.lng };
+  Places.addRecent(dest);
+  if (S.troute) { MV?.clearRoute(); }
+  const T = S.troute = { route: null, dest, lastIdx: 0, s: 0 }; renderRouteChip();
+  if (CFG.autoNav) navigateTo(dest); // CarPlay/휴대폰 네이버 지도 안내 시작
+  try {
+    const r = prepareRoute(await routeOSRM(from, dest));
+    if (S.troute !== T) return;
+    T.route = r;
+    if (MV) {
+      MV.setRoute(r.path); MV.setDest(dest);
+      onUserMapMove(); MV.fit(r.path, { top: 70, right: 70, bottom: 80, left: 40 });
+      clearTimeout(followTimer); followTimer = setTimeout(() => setFollow(true), 7000);
+    }
+  } catch (e) { if (S.troute === T) toast('경로를 그리지 못했어요 (' + e.message + ')'); }
+  renderRouteChip();
+}
+function trackRemain() {
+  const T = S.troute, R = T?.route; if (!R) return null;
+  const rem = Math.max(0, R.total - T.s), sec = R.total ? R.duration * rem / R.total : 0;
+  return { rem, sec, eta: new Date(Date.now() + sec * 1000) };
+}
+function renderRouteChip() {
+  const T = S.troute, el = $('#routeChip');
+  if (!T || CFG.navMode !== 'track' || !CFG.destRoute) { el.hidden = true; return; }
+  el.hidden = false; $('#rchName').textContent = '🏁 ' + T.dest.name;
+  const r = trackRemain();
+  $('#rchInfo').textContent = r ? `${fmtDist(r.rem)} · ${fmtClock(r.eta)} 도착 예정` : '경로 계산 중…';
+}
+function updateTrackRoute(fix) {
+  const T = S.troute; if (!T?.route) return;
+  const R = T.route, snap = snapToRoute(R, fix, T.lastIdx);
+  if (snap.d < 70) { T.lastIdx = snap.i; T.s = Math.max(T.s, snap.s); if (!CFG.mapOff) MV?.setProgress(snap.i, snap.point); }
+  if (R.total - T.s < 60 || hav(fix, T.dest) < 50) { clearTrackRoute(); return; } // 도착
+  renderRouteChip();
+}
+function clearTrackRoute() { if (!S.troute) return; S.troute = null; MV?.clearRoute(); MV?.setDest(null); renderRouteChip(); }
+async function shareEta() {
+  const T = S.troute; if (!T) return;
+  const r = trackRemain();
+  const text = r ? `🚗 ${T.dest.name}(으)로 가는 중이에요. 남은 거리 ${fmtDist(r.rem)}, ${fmtClock(r.eta)}쯤 도착할 것 같아요 (약 ${fmtDur(r.sec)}).`
+    : `🚗 ${T.dest.name}(으)로 출발했어요.`;
+  try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('도착 예정 문구를 복사했어요. 메시지에 붙여넣으세요.'); } catch { prompt('복사해서 보내세요', text); }
+}
+
+/* ── 신호등 (OpenStreetMap Overpass, 키 필요 없음) ── */
+const SIG = { center: null, t: 0, busy: false, fails: 0 };
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+async function maybeLoadSignals(p) {
+  if (!CFG.showSignals || MV?.kind !== 'gl' || CFG.mapOff || SIG.busy) return;
+  if (SIG.center && hav(SIG.center, p) < 1200 && Date.now() - SIG.t < 30 * 60e3) return;
+  if (SIG.fails && Date.now() - SIG.t < Math.min(30, 2 ** SIG.fails) * 60e3) return; // 실패하면 점점 늦게 재시도
+  SIG.busy = true; SIG.t = Date.now();
+  const d = .022, bb = [p.lat - d, p.lng - d * 1.25, p.lat + d, p.lng + d * 1.25].map(x => x.toFixed(4)).join(',');
+  const q = `[out:json][timeout:20];node["highway"="traffic_signals"](${bb});out skel;`;
+  for (const ep of OVERPASS) {
+    try {
+      const j = await fetchJSON(ep + '?data=' + encodeURIComponent(q), {}, 25000);
+      MV?.setSignals?.({ type: 'FeatureCollection', features: (j.elements || []).map(e => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [e.lon, e.lat] } })) });
+      SIG.center = { lat: p.lat, lng: p.lng }; SIG.fails = 0; SIG.busy = false; return;
+    } catch (e) { console.warn('signals', ep, e); }
+  }
+  SIG.fails++; SIG.busy = false;
+}
+
 // 밤에 화면 어둡게
 function applyDim() { $('#dimmer').style.opacity = (Number(CFG.nightDim) > 0 && isDarkMap()) ? Number(CFG.nightDim) / 100 : 0; }
 
@@ -2430,6 +2698,8 @@ function applyDisplay() {
   b.classList.toggle('hide-air', !CFG.showAir);
   b.classList.toggle('sec-on', !!CFG.clockSeconds);
   b.classList.toggle('hide-trip', !CFG.showTrip);
+  b.classList.toggle('no-dest', !CFG.destRoute);
+  b.classList.toggle('no-etashare', !CFG.etaShare);
   b.classList.toggle('map-off', !!CFG.mapOff && CFG.navMode === 'track');
   document.documentElement.style.setProperty('--accent', CFG.accent);
 }
@@ -2451,6 +2721,10 @@ function setCfg(k, v) {
   }
   if (k === 'hAdjust') fitViewport();
   if (k === 'nightDim') applyDim();
+  if (k === 'showSignals') { MV?.showSignalsLayer?.(v); if (v && (S.realPos || S.pos)) { SIG.center = null; maybeLoadSignals(S.realPos || S.pos); } }
+  if (k === 'parkWalkTrail') MV?.syncWalk?.();
+  if (k === 'mapOffset' && S.pos) followCamera(S.pos, true);
+  if (k === 'destRoute' && !v) clearTrackRoute();
   if (k === 'speedLimit') { overState = !overState; updateSpeedAlert(); }
   if (k === 'showUpNext') { queueFails = 0; if (v) spLoadQueue(); else $('#spUpNext').hidden = true; }
   if (k === 'showPoi' && MV?.kind === 'gl' && MV.map.getLayer('poi')) MV.map.setLayoutProperty('poi', 'visibility', v ? 'visible' : 'none');
@@ -2511,6 +2785,14 @@ function bindSettings() {
     const d = +b.dataset.h; setCfg('hAdjust', d === 0 ? 0 : (Number(CFG.hAdjust) || 0) + d);
   });
   $('#fabPark').onclick = e => { e.stopPropagation(); onParkBtn(); };
+  $('#fabDest').onclick = e => { e.stopPropagation(); openDestSheet(); };
+  $('#routeChip').addEventListener('click', e => {
+    e.stopPropagation(); const a = e.target.closest('button')?.dataset.a, T = S.troute;
+    if (a === 'nav' && T) navigateTo(T.dest);
+    else if (a === 'share') shareEta();
+    else if (a === 'close') clearTrackRoute();
+    else if (T?.route && MV) { onUserMapMove(); MV.fit(T.route.path, { top: 90, right: 70, bottom: 100, left: 40 }); }
+  });
   $('#tripShow').onclick = showTripSheet;
   $('#speedo').addEventListener('click', e => { if (CFG.mapOff && CFG.navMode === 'track') return; e.stopPropagation(); showTripSheet(); });
   $('#banner').onclick = () => { $('#banner').hidden = true; };
