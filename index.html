@@ -263,7 +263,7 @@ body:not(.mode-track) #placeChip{display:none}
   body.mode-track #app{grid-template-rows:minmax(0,44fr) minmax(0,34fr) minmax(0,22fr)}
 }
 /* 음악 칸이 작으면 플레이리스트를 숨기고 버튼을 줄임 */
-@container (max-height: 360px){ .sp-list-head, .sp-list{display:none} #spMain{justify-content:center} }
+@container (max-height: 420px){ .sp-list-head, .sp-list{display:none} #spMain{justify-content:center} }
 @container (max-height: 270px){
   .sp-btn{width:42px;height:42px} .sp-btn.play{width:54px;height:54px}
   .sp-ctrls{margin:2px 0} .sp-progress{margin-top:6px}
@@ -282,6 +282,154 @@ body.lite #musicPanel{background:#121317}
 body.lite.map-dark #map.is-naver img{filter:none}
 body.lite #turnBanner,body.lite #speedo,body.lite #spArt{box-shadow:none}
 body.lite .car-marker{transition:none}
+
+/* ═════════════ iOS 스타일 (위젯 화면) ═════════════ */
+:root{
+  --panel:#1c1c1e; --panel2:#2c2c2e; --panel3:#3a3a3c; --line:#38383a; --sub:#8e8e93;
+  --accent:#0a84ff; --green:#1ed760; --ios-green:#30d158; --red:#ff453a; --gap:10px; --r:28px;
+  --mat:rgba(30,30,32,.78);
+}
+html,body{font-family:-apple-system,"SF Pro Text",BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;letter-spacing:-.01em}
+.panel{border-radius:var(--r)}
+.glass{background:var(--mat);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:.5px solid rgba(255,255,255,.08);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+
+/* 칸 비율 (가로 화면: 열/행, 세로 화면: 행) */
+body{--c1:62fr;--c2:19fr;--r1:72fr;--r2:28fr;--p1:40fr;--p2:42fr;--p3:18fr}
+body[data-layout="map"]{--c1:70fr;--c2:15fr;--r1:70fr;--r2:30fr;--p1:52fr;--p2:32fr;--p3:16fr}
+body[data-layout="music"]{--c1:52fr;--c2:24fr;--r1:74fr;--r2:26fr;--p1:32fr;--p2:52fr;--p3:16fr}
+body.mode-track #app{grid-template-columns:minmax(0,var(--c1)) minmax(0,var(--c2)) minmax(0,var(--c2));grid-template-rows:minmax(0,var(--r1)) minmax(0,var(--r2))}
+@media (max-aspect-ratio:1/1){
+  body.mode-track #app{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,var(--p1)) minmax(0,var(--p2)) minmax(0,var(--p3))}
+}
+
+/* 지도 위 버튼: Apple 지도처럼 한 덩어리 */
+#mapFabs{gap:0;border-radius:14px;overflow:hidden;background:var(--mat);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:.5px solid rgba(255,255,255,.08);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+#mapFabs .fab{width:48px;height:48px;border-radius:0;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--accent)}
+#mapFabs .fab + .fab{border-top:.5px solid rgba(255,255,255,.14)}
+#mapFabs .fab svg{width:22px;height:22px}
+#fabSettings,#fabFull{color:#e5e5ea!important}
+#fabLocate .loc-fill{display:none}
+#fabLocate.following .loc-fill{display:block}
+#fabLocate.following .loc-line{display:none}
+#placeChip{border-radius:14px;padding:9px 14px;font-size:16px;font-weight:600}
+#placeChip small{color:#aeaeb2}
+#speedo{width:auto;height:auto;min-width:64px;padding:8px 12px;border-radius:14px;background:var(--mat);color:#fff;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:.5px solid rgba(255,255,255,.08)}
+#speedo b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+#speedo span{color:#aeaeb2;font-size:11px;font-weight:600}
+body.hide-speed #speedo, body.hide-place #placeChip{display:none!important}
+#osmAttr{position:absolute;right:8px;bottom:6px;z-index:450;font-size:10px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.35);padding:2px 7px;border-radius:8px}
+#osmAttr a{color:inherit;text-decoration:none}
+
+/* 진행 방향으로 지도 회전 */
+#navPanel.heading-up #map{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%) rotate(var(--rot,0deg));transition:transform .8s linear}
+body.lite #navPanel.heading-up #map{transition:none}
+
+/* 내 위치 아이콘 */
+.car-marker{display:grid;place-items:center}
+.car-marker svg{overflow:visible}
+.me-emoji{line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.me-dot-halo{animation:mehalo 2.4s ease-out infinite;transform-origin:center}
+@keyframes mehalo{0%{opacity:.5;transform:scale(.6)}100%{opacity:0;transform:scale(1.35)}}
+body.lite .me-dot-halo{animation:none;opacity:0}
+
+/* 음악: Apple Music 느낌 */
+#musicPanel{background:#1c1c1e}
+.sp-bg{filter:blur(50px) saturate(1.6) brightness(.55)}
+body.no-albumbg .sp-bg{display:none}
+#spArt{width:clamp(64px,min(34cqw,40cqh),220px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#spTitle{font-size:clamp(17px,6.2cqw,26px);font-weight:700}
+#spArtist{color:rgba(235,235,245,.65);font-weight:500}
+#spDevice{color:var(--green);font-weight:500}
+.sp-track{height:6px;border-radius:3px;background:rgba(255,255,255,.2)}
+#spBar{background:rgba(255,255,255,.92)}
+.sp-times{color:rgba(235,235,245,.6);font-size:12px;font-weight:500}
+.sp-btn{color:#fff}
+.sp-btn.play{background:none;color:#fff;width:68px;height:68px}
+.sp-btn.play svg{width:44px;height:44px}
+.sp-btn svg{width:30px;height:30px}
+.sp-btn.on{color:var(--accent)}
+.sp-btn .one{background:var(--accent);color:#fff}
+.sp-list-head{color:#fff;font-size:15px}
+.pl img,.pl .pl-ph{border-radius:8px}
+body.no-playlists .sp-list-head, body.no-playlists .sp-list{display:none}
+body.no-playlists #spMain{justify-content:center}
+
+/* 시계: 잠금화면 느낌 */
+#clockPanel{background:#1c1c1e}
+#clockDate{order:-1;margin:0 0 min(1.5cqh,6px);font-size:min(9cqw,14cqh);font-weight:600;color:rgba(235,235,245,.7)}
+#clockAmPm{display:none}
+#clockTime{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-weight:600;font-size:min(29cqw,48cqh);letter-spacing:-.02em}
+#clockTime small{font-size:.42em;font-weight:500;color:rgba(235,235,245,.6);margin-left:.08em}
+#clockTime .ampm{font-size:.36em;font-weight:600;color:rgba(235,235,245,.7);margin-right:.12em}
+body.hide-date #clockDate{display:none}
+#clockGear{top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);color:rgba(235,235,245,.7)}
+#clockGear svg{width:16px;height:16px}
+
+/* 날씨: iOS 날씨 위젯 느낌 (왼쪽 정렬) */
+#weatherPanel{align-items:flex-start;justify-content:center;text-align:left;padding:min(7cqw,16px) min(8cqw,18px);background:linear-gradient(180deg,#2a5d9f,#173a6b)}
+#weatherPanel.wx-clear{background:linear-gradient(180deg,#3d8de0,#1d5aa8)}
+#weatherPanel.wx-cloud{background:linear-gradient(180deg,#5b6f86,#34465c)}
+#weatherPanel.wx-rain{background:linear-gradient(180deg,#4a5a6e,#28323f)}
+#weatherPanel.wx-snow{background:linear-gradient(180deg,#7d8ea3,#4b5a6d)}
+#weatherPanel.night{background:linear-gradient(180deg,#1b2140,#0c1022)}
+#wxPlace{font-size:min(8.5cqw,13cqh);font-weight:600;color:#fff;display:flex;align-items:center;gap:4px;max-width:100%}
+#wxPlace::after{content:"";flex:none;width:.7em;height:.7em;background:currentColor;clip-path:polygon(100% 0,0 45%,45% 55%,55% 100%)}
+.wx-main{margin:0;gap:0}
+#wxTemp{order:-1;font-size:min(24cqw,40cqh);font-weight:300;margin-right:.15em}
+#wxIcon{font-size:min(13cqw,22cqh)}
+#wxDesc{font-size:min(7.5cqw,11cqh);margin-top:0;color:#fff;font-weight:600}
+#wxRange{font-size:min(7cqw,10.5cqh);color:rgba(255,255,255,.85);font-weight:500;margin-top:1px}
+#wxAir{font-size:min(6.5cqw,10cqh);margin-top:4px;background:rgba(255,255,255,.16);padding:1px 8px}
+body.hide-air #wxAir{display:none!important}
+@container (max-height:150px){ #wxAir{display:none!important} }
+
+/* iOS 토스트 */
+#toast{border-radius:18px;background:rgba(44,44,46,.92);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid rgba(255,255,255,.1);font-weight:500}
+
+/* ═════════════ iOS 설정 시트 ═════════════ */
+.ios-modal{place-items:end center;padding:0;background:rgba(0,0,0,.45)}
+.ios-sheet{width:min(620px,100%);max-height:92%;display:flex;flex-direction:column;padding:0;border-radius:14px 14px 0 0;background:#000;border:0;overflow:hidden;animation:sheetup .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (min-height:700px) and (min-width:700px){.ios-modal{place-items:center;padding:20px}.ios-sheet{border-radius:14px}}
+.sheet-bar{flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:56px;padding:0 16px;background:#1c1c1e;border-bottom:.5px solid var(--line)}
+.sheet-bar b{font-size:17px;font-weight:600}
+.sheet-bar button{justify-self:end;color:var(--accent);font-size:17px;font-weight:600;padding:8px 0}
+.sheet-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px calc(24px + env(safe-area-inset-bottom))}
+.grp-title{font-size:13px;color:var(--sub);text-transform:uppercase;margin:22px 16px 7px;font-weight:500}
+.grp{background:#1c1c1e;border-radius:12px;overflow:hidden}
+.grp .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;padding:8px 16px;width:100%;text-align:left;font-size:16px;cursor:pointer}
+.grp .row + .row,.grp .icon-picker + .row{border-top:.5px solid var(--line)}
+.grp .row > span{min-width:0}
+.grp .row small{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+.grp .row.link{color:var(--accent);justify-content:flex-start}
+.grp .row.link.danger{color:var(--red)}
+.ios-toggle{appearance:none;-webkit-appearance:none;flex:none;width:51px;height:31px;border-radius:16px;background:#39393d;position:relative;transition:background .2s;cursor:pointer;margin:0}
+.ios-toggle::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.25);transition:transform .2s}
+.ios-toggle:checked{background:var(--ios-green)}
+.ios-toggle:checked::after{transform:translateX(20px)}
+.seg{flex:none;display:flex;background:#2c2c2e;border-radius:9px;padding:2px;gap:2px;max-width:70%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;padding:6px 10px;border-radius:7px;font-size:13px;font-weight:500;color:#fff;white-space:nowrap}
+.seg button.on{background:#636366;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.swatches button{width:28px;height:28px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.swatches button.on{border-color:#fff}
+.icon-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;padding:12px}
+.icon-picker button{height:72px;border-radius:12px;background:#2c2c2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#aeaeb2;border:2px solid transparent}
+.icon-picker button.on{border-color:var(--accent);color:#fff}
+.icon-picker .pv{height:36px;display:grid;place-items:center;font-size:28px;line-height:1}
+.ios-sheet .status{background:none;margin:0;padding:12px 16px;font-size:14px}
+.adv summary{list-style:none;color:#fff}
+.adv summary::-webkit-details-marker{display:none}
+.adv summary::after{content:"›";color:var(--sub);font-size:22px;transition:transform .2s}
+.adv[open] summary::after{transform:rotate(90deg)}
+.adv-body{padding:4px 16px 14px;border-top:.5px solid var(--line)}
+.adv-body .row{padding-left:0;padding-right:0}
+.adv-body .field{margin:12px 0}
+.adv-body .field input,.adv-body .field select{background:#2c2c2e;border:0}
+.ver{text-align:center;font-size:12px;color:#636366;margin:22px 0 4px}
+
+.me-dot-halo{transform-box:fill-box}
 </style>
 </head>
 <body>
@@ -335,7 +483,7 @@ body.lite .car-marker{transition:none}
     </div>
 
     <div id="mapFabs">
-      <button class="fab glass" id="fabLocate" aria-label="현재 위치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+      <button class="fab glass" id="fabLocate" aria-label="현재 위치 따라가기"><svg viewBox="0 0 24 24"><path class="loc-line" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="loc-fill" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="currentColor"/></svg></button>
       <button class="fab glass" id="fabSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="fab glass" id="fabTraffic" aria-label="실시간 교통" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg></button>
       <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
@@ -343,6 +491,7 @@ body.lite .car-marker{transition:none}
 
     <div id="placeChip" class="glass">📍 위치 확인 중…</div>
     <div id="speedo"><b id="speedVal">0</b><span>km/h</span></div>
+    <div id="osmAttr" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 
     <div id="simBadge" class="glass" hidden>
       모의주행
@@ -426,56 +575,88 @@ body.lite .car-marker{transition:none}
   </section>
 </div>
 
-<!-- 설정 -->
-<div id="settings" class="modal" hidden>
-  <div class="sheet">
-    <h2>설정</h2>
-    <p class="desc">입력한 값은 이 기기의 브라우저에만 저장됩니다.</p>
-    <div class="status" id="statusBox"></div>
+<!-- 설정 (iOS 스타일 시트) -->
+<div id="settings" class="modal ios-modal" hidden>
+  <div class="sheet ios-sheet">
+    <div class="sheet-bar"><span></span><b>설정</b><button id="settingsDone">완료</button></div>
+    <div class="sheet-scroll">
 
-    <div class="field">
-      <label for="cfgNavMode">내비게이션 방식</label>
-      <select id="cfgNavMode">
-        <option value="track">내 위치 지도 (위젯용 · 키 필요 없음)</option>
-        <option value="builtin">이 화면 안의 내장 내비게이션 (길찾기·음성 안내)</option>
-        <option value="app">버튼으로 네이버 지도 앱 실행 (신호등·카메라 안내는 앱에서)</option>
-      </select>
-      <div class="hint">'네이버 지도 앱 실행' 방식에서는 아래 네이버 Client ID / 프록시 주소가 필요 없어요.</div>
-    </div>
-    <div class="field">
-      <label for="cfgNaver">네이버 지도 Client ID (ncpKeyId)</label>
-      <input type="text" id="cfgNaver" placeholder="비워두면 OpenStreetMap 지도 사용" autocomplete="off" spellcheck="false">
-      <div class="hint">네이버 클라우드 콘솔 → Maps → Application에서 발급. Web 서비스 URL에 <code id="originHint"></code> 을 등록해야 합니다.</div>
-    </div>
-    <div class="field">
-      <label for="cfgProxy">길찾기 프록시 주소 (Cloudflare Worker)</label>
-      <input type="text" id="cfgProxy" placeholder="https://carplay-proxy.○○○.workers.dev" autocomplete="off" spellcheck="false">
-      <div class="hint">넣으면 네이버 실시간 교통 길찾기와 장소 검색을 씁니다. 비워두면 OSRM 무료 경로(교통 미반영)를 씁니다.</div>
-    </div>
-    <div class="field">
-      <label for="cfgSpotify">Spotify Client ID</label>
-      <input type="text" id="cfgSpotify" placeholder="Spotify Developer Dashboard의 Client ID" autocomplete="off" spellcheck="false">
-      <div class="hint">앱 설정의 Redirect URI에 <code id="redirectHint"></code> 를 그대로 등록하세요.</div>
-    </div>
-    <div class="field">
-      <label for="cfgTheme">지도 테마</label>
-      <select id="cfgTheme">
-        <option value="auto">자동 (저녁 6시~아침 7시 어둡게)</option>
-        <option value="dark">항상 어둡게</option>
-        <option value="light">항상 밝게</option>
-      </select>
-    </div>
-    <label class="check">가벼운 화면 (구형 iPad 추천 · 블러 효과 끔) <input type="checkbox" id="cfgLite"></label>
-    <label class="check">음성 안내 <input type="checkbox" id="cfgVoice"></label>
-    <label class="check">24시간제 시계 <input type="checkbox" id="cfgClock24"></label>
+      <div class="grp-title">내 위치 아이콘</div>
+      <div class="grp">
+        <div class="icon-picker" id="iconPicker"></div>
+        <div class="row"><span>색상</span><div class="swatches" data-key="meColor"></div></div>
+        <div class="row"><span>크기</span><div class="seg" data-key="meSize"><button data-v="s">작게</button><button data-v="m">보통</button><button data-v="l">크게</button></div></div>
+      </div>
 
-    <div class="sheet-btns">
-      <button class="btn small" id="clearPlaces">집·회사·최근 기록 지우기</button>
-      <button class="btn small" id="spLogout">Spotify 로그아웃</button>
-    </div>
-    <div class="sheet-btns">
-      <button class="btn" id="settingsClose">취소</button>
-      <button class="btn primary" id="settingsSave">저장 후 새로고침</button>
+      <div class="grp-title">지도</div>
+      <div class="grp">
+        <div class="row"><span>지도 색</span><div class="seg" data-key="theme"><button data-v="auto">자동</button><button data-v="light">밝게</button><button data-v="dark">어둡게</button></div></div>
+        <div class="row"><span>확대</span><div class="seg" data-key="zoomMode"><button data-v="auto">속도 맞춤</button><button data-v="near">가까이</button><button data-v="mid">보통</button><button data-v="far">넓게</button></div></div>
+        <label class="row"><span>진행 방향으로 지도 돌리기<small>켜면 지도를 손으로 끌 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="headingUp"></label>
+        <label class="row"><span>지나온 길 표시</span><input type="checkbox" class="ios-toggle" data-key="trail"></label>
+        <label class="row"><span>속도계</span><input type="checkbox" class="ios-toggle" data-key="showSpeed"></label>
+        <label class="row"><span>지금 달리는 도로 이름</span><input type="checkbox" class="ios-toggle" data-key="showPlace"></label>
+        <button class="row link" id="clearTrail">지나온 길 지우기</button>
+      </div>
+
+      <div class="grp-title">화면</div>
+      <div class="grp">
+        <div class="row"><span>칸 비율</span><div class="seg" data-key="layout"><button data-v="map">지도 크게</button><button data-v="balance">균형</button><button data-v="music">음악 크게</button></div></div>
+        <div class="row"><span>강조 색</span><div class="swatches" data-key="accent"></div></div>
+        <label class="row"><span>화면 꺼지지 않게</span><input type="checkbox" class="ios-toggle" data-key="keepAwake"></label>
+        <label class="row"><span>가벼운 화면<small>구형 기기용 · 흐림 효과 끄기</small></span><input type="checkbox" class="ios-toggle" data-key="lite"></label>
+      </div>
+
+      <div class="grp-title">음악</div>
+      <div class="grp">
+        <label class="row"><span>플레이리스트 보기<small>칸이 충분히 클 때만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="showPlaylists"></label>
+        <label class="row"><span>앨범 커버 배경</span><input type="checkbox" class="ios-toggle" data-key="albumBg"></label>
+        <button class="row link danger" id="spLogout">Spotify 로그아웃</button>
+      </div>
+
+      <div class="grp-title">시계 · 날씨</div>
+      <div class="grp">
+        <label class="row"><span>24시간제</span><input type="checkbox" class="ios-toggle" data-key="clock24"></label>
+        <label class="row"><span>초 표시</span><input type="checkbox" class="ios-toggle" data-key="clockSeconds"></label>
+        <label class="row"><span>날짜 표시</span><input type="checkbox" class="ios-toggle" data-key="showDate"></label>
+        <label class="row"><span>미세먼지 표시</span><input type="checkbox" class="ios-toggle" data-key="showAir"></label>
+      </div>
+
+      <div class="grp-title">상태</div>
+      <div class="grp"><div class="status" id="statusBox"></div></div>
+
+      <details class="grp adv">
+        <summary class="row">고급 설정</summary>
+        <div class="adv-body">
+          <div class="field">
+            <label for="cfgNavMode">화면 방식</label>
+            <select id="cfgNavMode">
+              <option value="track">내 위치 지도 (위젯용)</option>
+              <option value="builtin">내장 내비게이션 (길찾기·음성 안내)</option>
+              <option value="app">네이버 지도 앱 실행 버튼</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cfgSpotify">Spotify Client ID</label>
+            <input type="text" id="cfgSpotify" autocomplete="off" spellcheck="false">
+            <div class="hint">Spotify 앱 설정의 Redirect URI: <code id="redirectHint"></code></div>
+          </div>
+          <div class="field">
+            <label for="cfgNaver">네이버 지도 Client ID (내장 내비용, 선택)</label>
+            <input type="text" id="cfgNaver" placeholder="비워두면 OpenStreetMap" autocomplete="off" spellcheck="false">
+            <div class="hint">Web 서비스 URL: <code id="originHint"></code></div>
+          </div>
+          <div class="field">
+            <label for="cfgProxy">길찾기 프록시 주소 (내장 내비용, 선택)</label>
+            <input type="text" id="cfgProxy" placeholder="https://carplay-proxy.○○○.workers.dev" autocomplete="off" spellcheck="false">
+          </div>
+          <label class="row"><span>음성 안내 (내장 내비)</span><input type="checkbox" class="ios-toggle" data-key="voice"></label>
+          <button class="row link danger" id="clearPlaces">집·회사·최근 기록 지우기</button>
+          <div class="hint" style="margin-top:6px">고급 설정을 바꾸면 '완료'를 누를 때 화면이 새로고침돼요.</div>
+        </div>
+      </details>
+
+      <div class="ver" id="verLabel"></div>
     </div>
   </div>
 </div>
@@ -513,9 +694,22 @@ body.lite .car-marker{transition:none}
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
+const APP_VERSION = '11-27 iOS v4'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
-  lite: true,            // 가벼운 화면: 블러/필터 효과를 꺼서 구형 iPad에서도 부드럽게
+  lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
+  meIcon: 'dot',         // 내 위치 아이콘: dot | arrow | car | emoji:🚗 ...
+  meColor: '#0a84ff',    // 내 위치 아이콘 색
+  meSize: 'm',           // s | m | l
+  zoomMode: 'auto',      // auto(속도 맞춤) | near | mid | far
+  headingUp: false,      // 진행 방향으로 지도 회전
+  trail: true,           // 지나온 길 표시
+  showSpeed: true, showPlace: true,
+  layout: 'balance',     // map | balance | music  (칸 비율)
+  accent: '#0a84ff',     // 강조 색
+  keepAwake: true,       // 화면 꺼짐 방지
+  showPlaylists: true, albumBg: true,
+  clockSeconds: false, showDate: true, showAir: true,
   naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
   spotifyClientId: '7afc32c54551444e93c554bd45a29ebe', // Spotify 앱 Client ID
@@ -608,9 +802,48 @@ const TURN_ICONS = {
   'waypoint':     svgI('<circle cx="24" cy="20" r="9"/><path d="M24 29v13"/>'),
   'dest':         svgI('<path d="M14 43V7M14 8h22l-5 8 5 8H14"/>')
 };
-const CAR_HTML = `<div id="carMarker" class="car-marker"><svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="20" fill="rgba(59,155,255,.22)"/><path d="M22 6 L33 34 L22 27.5 L11 34 Z" fill="#3b9bff" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg></div>`;
+const ME_COLORS = ['#0a84ff', '#30d158', '#ff453a', '#ff9f0a', '#bf5af2', '#ff375f', '#64d2ff', '#ffffff'];
+const ACCENTS = ['#0a84ff', '#30d158', '#ff9f0a', '#ff375f', '#bf5af2', '#64d2ff'];
+const ME_ICONS = [['dot', '파란 점'], ['arrow', '화살표'], ['car', '자동차'], ['emoji:🚗', ''], ['emoji:🚙', ''], ['emoji:🏎️', ''], ['emoji:🛵', ''], ['emoji:🐶', ''], ['emoji:🐱', '']];
+const meSizePx = () => ({ s: 34, m: 46, l: 60 })[CFG.meSize] || 46;
+function meIconSvg(kind, c, sz) {
+  const ring = c.toLowerCase() === '#ffffff' ? '#1c1c1e' : '#fff';
+  if (kind === 'dot') return `<svg viewBox="0 0 60 60" width="${sz}" height="${sz}"><circle class="me-dot-halo" cx="30" cy="30" r="22" fill="${c}" opacity=".25"/><path d="M30 30 L16.5 3.5 A30 30 0 0 1 43.5 3.5 Z" fill="${c}" opacity=".38"/><circle cx="30" cy="30" r="11.5" fill="${ring}"/><circle cx="30" cy="30" r="8.5" fill="${c}"/></svg>`;
+  if (kind === 'car') return `<svg viewBox="0 0 40 64" width="${Math.round(sz * .62)}" height="${sz}"><rect x="4" y="3" width="32" height="58" rx="13" fill="${c}" stroke="${ring}" stroke-width="2.5"/><path d="M9.5 21 Q20 14 30.5 21 L28.5 29 H11.5Z" fill="rgba(0,0,0,.55)"/><path d="M11.5 46 H28.5 L30 52 Q20 56.5 10 52Z" fill="rgba(0,0,0,.45)"/><rect x="11" y="30" width="18" height="15" rx="4" fill="rgba(255,255,255,.2)"/></svg>`;
+  if (String(kind).startsWith('emoji:')) return `<span class="me-emoji" style="font-size:${Math.round(sz * .78)}px">${kind.slice(6)}</span>`;
+  return `<svg viewBox="0 0 44 44" width="${sz}" height="${sz}"><circle cx="22" cy="22" r="20" fill="${c}" opacity=".22"/><path d="M22 6 L33 34 L22 27.5 L11 34 Z" fill="${c}" stroke="${ring}" stroke-width="2.6" stroke-linejoin="round"/></svg>`;
+}
+function meIconHTML() { const sz = meSizePx(); return `<div id="carMarker" class="car-marker" style="width:${sz}px;height:${sz}px">${meIconSvg(CFG.meIcon, CFG.meColor, sz)}</div>`; }
 const DEST_HTML = `<div><svg viewBox="0 0 36 46" width="36" height="46"><path d="M18 44s15-15.6 15-27A15 15 0 0 0 3 17c0 11.4 15 27 15 27z" fill="#ff4d4f" stroke="#fff" stroke-width="2.5"/><circle cx="18" cy="17" r="5.5" fill="#fff"/></svg></div>`;
-function rotateCar(h) { const el = document.getElementById('carMarker'); if (el) el.style.transform = `rotate(${Math.round(h || 0)}deg)`; }
+let carRot = 0, mapRot = 0, lastShownH = 0;
+const unwrap = (prev, next) => prev + ((((next - prev) % 360) + 540) % 360) - 180; // 359°→1° 처럼 돌 때 한 바퀴 돌지 않게
+function headingUpActive() { return !!CFG.headingUp && MV?.kind === 'leaflet' && CFG.navMode !== 'app'; }
+function rotateCar(h) {
+  lastShownH = h || 0;
+  const el = document.getElementById('carMarker'); if (!el) return;
+  if (String(CFG.meIcon).startsWith('emoji:')) { el.style.transform = headingUpActive() ? `rotate(${mapRot}deg)` : ''; return; } // 이모지는 항상 똑바로
+  carRot = unwrap(carRot, lastShownH);
+  el.style.transform = `rotate(${carRot}deg)`;
+}
+function setMapRotation(h) {
+  if (!headingUpActive()) return;
+  mapRot = unwrap(mapRot, h || 0);
+  $('#map').style.setProperty('--rot', (-mapRot) + 'deg');
+}
+function applyHeadingUp() {
+  const panel = $('#navPanel'), m = $('#map'), on = headingUpActive();
+  panel.classList.toggle('heading-up', on);
+  if (on) {
+    const d = Math.ceil(Math.hypot(panel.clientWidth, panel.clientHeight)) + 4; // 돌려도 빈 모서리가 안 보이게 대각선 크기로
+    m.style.width = m.style.height = d + 'px';
+    MV.map.dragging.disable(); setMapRotation(S.heading);
+  } else {
+    m.style.width = m.style.height = ''; m.style.removeProperty('--rot'); mapRot = 0;
+    MV?.map?.dragging?.enable?.();
+  }
+  MV?.resize(); rotateCar(lastShownH);
+  if (S.pos) followCamera(S.pos, true);
+}
 
 /* ════════════ 3. 상태 ════════════ */
 const S = {
@@ -676,7 +909,7 @@ const NaverAdapter = {
   },
   clearRoute() { this.line?.setMap(null); this.lineBg?.setMap(null); this.line = this.lineBg = null; },
   setMe(p, h) {
-    if (!this.me) this.me = new naver.maps.Marker({ map: this.map, position: this.ll(p), zIndex: 1000, icon: { content: CAR_HTML, anchor: new naver.maps.Point(22, 22) } });
+    if (!this.me) this.me = new naver.maps.Marker({ map: this.map, position: this.ll(p), zIndex: 1000, icon: { content: meIconHTML(), anchor: new naver.maps.Point(meSizePx() / 2, meSizePx() / 2) } });
     else this.me.setPosition(this.ll(p));
     rotateCar(h);
   },
@@ -693,13 +926,15 @@ const NaverAdapter = {
   center() { const c = this.map.getCenter(); return { lat: c.lat(), lng: c.lng() }; },
   resize() { const el = $('#map'); if (this.map.autoResize) this.map.autoResize(); else this.map.setSize(new naver.maps.Size(el.clientWidth, el.clientHeight)); },
   applyTheme() {},
+  refreshMe() { if (this.me) { this.me.setIcon({ content: meIconHTML(), anchor: new naver.maps.Point(meSizePx() / 2, meSizePx() / 2) }); rotateCar(lastShownH); } },
   destroy() { try { this.map.destroy(); } catch {} this.me = this.dest = this.line = this.lineBg = null; $('#map').classList.remove('is-naver'); $('#map').innerHTML = ''; }
 };
 
 const LeafletAdapter = {
   kind: 'leaflet',
   init(el, c) {
-    this.map = L.map(el, { zoomControl: false, attributionControl: true }).setView([c.lat, c.lng], 16);
+    this.map = L.map(el, { zoomControl: false, attributionControl: false }).setView([c.lat, c.lng], 16);
+    $('#osmAttr').hidden = false; // 저작권 표시는 지도 밖에 고정 (지도를 돌려도 보이게)
     this.applyTheme();
     this.map.on('dragstart', onUserMapMove);
     this.map.on('click', onMapClick);
@@ -732,7 +967,8 @@ const LeafletAdapter = {
   },
   clearRoute() { this.line?.remove(); this.lineBg?.remove(); this.line = this.lineBg = null; },
   setMe(p, h) {
-    if (!this.me) this.me = L.marker([p.lat, p.lng], { zIndexOffset: 1000, icon: L.divIcon({ html: CAR_HTML, className: 'leaflet-div-icon-clear', iconSize: [44, 44], iconAnchor: [22, 22] }) }).addTo(this.map);
+    const sz = meSizePx();
+    if (!this.me) this.me = L.marker([p.lat, p.lng], { zIndexOffset: 1000, interactive: false, icon: L.divIcon({ html: meIconHTML(), className: 'leaflet-div-icon-clear', iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2] }) }).addTo(this.map);
     else this.me.setLatLng([p.lat, p.lng]);
     rotateCar(h);
   },
@@ -743,7 +979,20 @@ const LeafletAdapter = {
   },
   center() { const c = this.map.getCenter(); return { lat: c.lat, lng: c.lng }; },
   resize() { this.map.invalidateSize(); },
-  destroy() { try { this.map.remove(); } catch {} this.me = this.dest = this.line = this.lineBg = this.tiles = null; $('#map').innerHTML = ''; }
+  refreshMe() {
+    if (this.me) { const ll = this.me.getLatLng(); this.me.remove(); this.me = null; this.setMe({ lat: ll.lat, lng: ll.lng }, lastShownH); }
+    this.trailLine?.setStyle({ color: CFG.meColor === '#ffffff' ? '#aeaeb2' : CFG.meColor });
+  },
+  addTrail(p) {
+    if (!CFG.trail) return;
+    if (!this.trailLine) { this.trailPts = []; this.trailLine = L.polyline([], { color: CFG.meColor === '#ffffff' ? '#aeaeb2' : CFG.meColor, weight: 5, opacity: .55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(this.map); }
+    const last = this.trailPts[this.trailPts.length - 1];
+    if (last && hav({ lat: last[0], lng: last[1] }, p) < 8) return;
+    this.trailPts.push([p.lat, p.lng]); if (this.trailPts.length > 2000) this.trailPts.shift();
+    this.trailLine.setLatLngs(this.trailPts);
+  },
+  clearTrail() { this.trailLine?.remove(); this.trailLine = null; this.trailPts = []; },
+  destroy() { try { this.map.remove(); } catch {} this.me = this.dest = this.line = this.lineBg = this.tiles = this.trailLine = null; $('#map').innerHTML = ''; $('#osmAttr').hidden = true; }
 };
 
 let MV = null; // 현재 사용 중인 지도 어댑터
@@ -814,12 +1063,12 @@ function applyTheme() { document.body.classList.toggle('map-dark', isDarkMap());
 /* ════════════ 5. 위치 ════════════ */
 let followTimer = null;
 function onUserMapMove() {
-  S.follow = false; $('#fabLocate').classList.add('active');
+  S.follow = false; $('#fabLocate').classList.add('active'); $('#fabLocate').classList.remove('following');
   clearTimeout(followTimer);
   if (S.nav) followTimer = setTimeout(() => setFollow(true), 12000); // 안내 중엔 12초 뒤 자동 복귀
 }
 function setFollow(on) {
-  S.follow = on; $('#fabLocate').classList.toggle('active', !on);
+  S.follow = on; $('#fabLocate').classList.toggle('active', !on); $('#fabLocate').classList.toggle('following', on);
   if (on && S.pos) followCamera(S.pos, true);
 }
 function followCamera(p, force) {
@@ -827,7 +1076,7 @@ function followCamera(p, force) {
   let z = null;
   const kmh = S.speed * 3.6;
   if (S.nav) z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15;
-  else if (CFG.navMode === 'track') z = kmh < 15 ? 16 : kmh < 60 ? 15 : kmh < 100 ? 14 : 13;
+  else if (CFG.navMode === 'track') z = ({ near: 17, mid: 15, far: 13 })[CFG.zoomMode] ?? (kmh < 15 ? 16 : kmh < 60 ? 15 : kmh < 100 ? 14 : 13);
   MV.panTo(p, z);
 }
 function onMapClick() { $('#searchInput').blur(); hideResults(); }
@@ -863,6 +1112,8 @@ function handlePosition(fix) {
     if (r && r.d < 35) { shown = r.point; if (S.speed < 1.5 || h == null) shownH = r.bearing; }
   }
   if (MV) {
+    if (S.speed > 1.5 || firstFix) setMapRotation(shownH);
+    if (CFG.navMode === 'track' && !S.sim && (fix.acc || 0) < 50) MV.addTrail?.(fix);
     MV.setMe(shown, shownH);
     if (firstFix) { firstFix = false; S.follow = true; MV.panTo(shown, 16); }
     else followCamera(shown);
@@ -1307,6 +1558,7 @@ function renderVoiceBtn() { $('#btnVoice').textContent = CFG.voice ? '🔊' : '�
 /* ── 화면 꺼짐 방지 ── */
 let wakeLock = null;
 async function keepAwake() {
+  if (!CFG.keepAwake) return;
   try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch {}
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); spStartPolling(); } else spStopPolling(); });
@@ -1314,9 +1566,9 @@ document.addEventListener('pointerdown', keepAwake);
 
 /* ════════════ 8. 시계 ════════════ */
 function tickClock() {
-  const d = new Date(), h = d.getHours(), mm = String(d.getMinutes()).padStart(2, '0');
-  if (CFG.clock24) { $('#clockAmPm').textContent = ''; $('#clockTime').textContent = `${String(h).padStart(2, '0')}:${mm}`; }
-  else { $('#clockAmPm').textContent = h < 12 ? '오전' : '오후'; $('#clockTime').textContent = `${h % 12 || 12}:${mm}`; }
+  const d = new Date(), h = d.getHours(), mm = String(d.getMinutes()).padStart(2, '0'), ss = String(d.getSeconds()).padStart(2, '0');
+  const sec = CFG.clockSeconds ? `<small>:${ss}</small>` : '';
+  $('#clockTime').innerHTML = CFG.clock24 ? `${String(h).padStart(2, '0')}:${mm}${sec}` : `<span class="ampm">${h < 12 ? '오전' : '오후'}</span>${h % 12 || 12}:${mm}${sec}`;
   $('#clockDate').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`;
 }
 
@@ -1357,8 +1609,11 @@ async function updateWeather(p) {
       $('#wxTemp').textContent = Math.round(c.temperature_2m) + '°';
       $('#wxDesc').textContent = desc;
       const pop = d.precipitation_probability_max?.[0];
-      $('#wxRange').textContent = `최고 ${Math.round(d.temperature_2m_max[0])}° · 최저 ${Math.round(d.temperature_2m_min[0])}°${pop != null && pop >= 30 ? ` · 비 ${pop}%` : ''}`;
-      $('#weatherPanel').classList.toggle('night', !c.is_day);
+      $('#wxRange').textContent = `최고:${Math.round(d.temperature_2m_max[0])}° 최저:${Math.round(d.temperature_2m_min[0])}°${pop != null && pop >= 30 ? ` · ☔${pop}%` : ''}`;
+      const wc = c.weather_code, wp = $('#weatherPanel');
+      wp.classList.remove('wx-clear', 'wx-cloud', 'wx-rain', 'wx-snow');
+      wp.classList.add(wc <= 1 ? 'wx-clear' : wc <= 48 ? 'wx-cloud' : ((wc >= 71 && wc <= 77) || wc === 85 || wc === 86) ? 'wx-snow' : 'wx-rain');
+      wp.classList.toggle('night', !c.is_day);
     } else $('#wxDesc').textContent = '날씨 정보 없음';
     if (aq.value?.current) {
       const c = aq.value.current;
@@ -1670,34 +1925,81 @@ function geoForWeather() {
 }
 
 /* ════════════ 11. 설정 ════════════ */
+let advSnapshot = null;
+function applyDisplay() {
+  const b = document.body;
+  b.dataset.layout = CFG.layout;
+  b.classList.toggle('lite', !!CFG.lite);
+  b.classList.toggle('hide-speed', !CFG.showSpeed);
+  b.classList.toggle('hide-place', !CFG.showPlace);
+  b.classList.toggle('no-playlists', !CFG.showPlaylists);
+  b.classList.toggle('no-albumbg', !CFG.albumBg);
+  b.classList.toggle('hide-date', !CFG.showDate);
+  b.classList.toggle('hide-air', !CFG.showAir);
+  document.documentElement.style.setProperty('--accent', CFG.accent);
+}
+function setCfg(k, v) {
+  CFG[k] = v; LS.set('config', { ...LS.get('config', {}), [k]: v });
+  applyDisplay();
+  if (k === 'theme') applyTheme();
+  if (['meIcon', 'meColor', 'meSize'].includes(k)) MV?.refreshMe?.();
+  if (k === 'zoomMode' && S.pos) followCamera(S.pos, true);
+  if (k === 'headingUp' && MV) applyHeadingUp();
+  if (k === 'trail' && !v) MV?.clearTrail?.();
+  if (k === 'layout') setTimeout(() => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); }, 80);
+  if (k === 'keepAwake') { if (v) keepAwake(); else { try { wakeLock?.release(); } catch {} wakeLock = null; } }
+  if (k === 'clock24' || k === 'clockSeconds') tickClock();
+  if (k === 'voice') renderVoiceBtn();
+  renderSettingsControls();
+}
+function renderSettingsControls() {
+  const box = $('#settings');
+  box.querySelectorAll('.ios-toggle[data-key]').forEach(t => { t.checked = !!CFG[t.dataset.key]; });
+  box.querySelectorAll('.seg[data-key]').forEach(s => s.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(CFG[s.dataset.key]))));
+  box.querySelectorAll('.swatches[data-key]').forEach(s => {
+    const list = s.dataset.key === 'accent' ? ACCENTS : ME_COLORS;
+    if (!s.children.length) s.innerHTML = list.map(c => `<button data-v="${c}" style="background:${c}" aria-label="색 ${c}"></button>`).join('');
+    s.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === CFG[s.dataset.key]));
+  });
+  $('#iconPicker').innerHTML = ME_ICONS.map(([k, label]) =>
+    `<button data-icon="${k}" class="${k === CFG.meIcon ? 'on' : ''}"><span class="pv">${meIconSvg(k, CFG.meColor, 34)}</span>${label}</button>`).join('');
+}
+function advValues() {
+  return { navMode: $('#cfgNavMode').value, naverKeyId: $('#cfgNaver').value.trim(), proxyUrl: $('#cfgProxy').value.trim().replace(/\/+$/, ''), spotifyClientId: $('#cfgSpotify').value.trim() };
+}
 function openSettings() {
-  $('#cfgNavMode').value = CFG.navMode; $('#cfgLite').checked = CFG.lite;
-  $('#cfgNaver').value = CFG.naverKeyId; $('#cfgProxy').value = CFG.proxyUrl; $('#cfgSpotify').value = CFG.spotifyClientId;
-  $('#cfgTheme').value = CFG.theme; $('#cfgVoice').checked = CFG.voice; $('#cfgClock24').checked = CFG.clock24;
+  $('#cfgNavMode').value = CFG.navMode; $('#cfgNaver').value = CFG.naverKeyId; $('#cfgProxy').value = CFG.proxyUrl; $('#cfgSpotify').value = CFG.spotifyClientId;
   $('#originHint').textContent = location.origin; $('#redirectHint').textContent = redirectUri();
-  $('#statusBox').innerHTML = CFG.navMode !== 'builtin' ? [
-    `화면 방식: <b>${CFG.navMode === 'track' ? '내 위치 지도 (OpenStreetMap)' : '네이버 지도 앱 실행 버튼'}</b>`,
-    `위치: <b>${S.realPos ? `확인됨 (오차 ±${Math.round(S.realPos.acc || 0)}m)` : '없음'}</b>`,
-    `Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`,
-    location.protocol !== 'https:' && location.hostname !== 'localhost' ? '<span style="color:#fb923c">⚠ HTTPS가 아니라서 위치·Spotify가 동작하지 않을 수 있어요</span>' : ''
-  ].filter(Boolean).join('<br>') : [
-    location.protocol === 'file:' ? '<span style="color:#fb923c">⚠ 지금은 PC 파일(file://)로 열려 있어요. 네이버 지도 키와 Spotify 로그인은 https 주소(예: GitHub Pages)에서만 동작합니다.</span>' : '',
-    `지도: <b>${MV?.kind === 'naver' ? '네이버 지도' : 'OpenStreetMap'}</b>`,
-    `길찾기: <b>${CFG.proxyUrl ? '네이버 Directions (실시간 교통)' : 'OSRM (교통 미반영)'}</b>`,
-    `위치: <b>${S.realPos ? `수신 중 (오차 ±${Math.round(S.realPos.acc)}m)` : '없음'}</b>`,
-    `Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`,
-    location.protocol !== 'https:' && location.hostname !== 'localhost' ? '<span style="color:#fb923c">⚠ HTTPS가 아니라서 위치·Spotify가 동작하지 않을 수 있어요</span>' : ''
-  ].filter(Boolean).join('<br>');
+  advSnapshot = JSON.stringify(advValues());
+  renderSettingsControls();
+  const st = [];
+  if (location.protocol === 'file:') st.push('<span style="color:#ff9f0a">⚠ PC 파일로 열려 있어요. https://jetbluejetyj.github.io/carplay/ 로 열어야 지도·Spotify가 동작합니다.</span>');
+  st.push(`위치: <b>${S.realPos ? `확인됨 (오차 ±${Math.round(S.realPos.acc || 0)}m)` : '아직 없음'}</b>`);
+  st.push(`지도: <b>${MV?.kind === 'naver' ? '네이버 지도' : MV ? 'OpenStreetMap' : '사용 안 함'}</b>`);
+  if (CFG.navMode === 'builtin') st.push(`길찾기: <b>${CFG.proxyUrl ? '네이버 Directions' : 'OSRM (교통 미반영)'}</b>`);
+  st.push(`Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`);
+  $('#statusBox').innerHTML = st.join('<br>');
+  $('#verLabel').textContent = 'My CarPlay · ' + APP_VERSION;
   $('#settings').hidden = false;
 }
-function saveSettings() {
-  const cfg = {
-    navMode: $('#cfgNavMode').value, lite: $('#cfgLite').checked,
-    naverKeyId: $('#cfgNaver').value.trim(), proxyUrl: $('#cfgProxy').value.trim().replace(/\/+$/, ''), spotifyClientId: $('#cfgSpotify').value.trim(),
-    theme: $('#cfgTheme').value, traffic: CFG.traffic, voice: $('#cfgVoice').checked, clock24: $('#cfgClock24').checked, routeOption: CFG.routeOption
-  };
-  LS.set('config', cfg);
-  location.reload();
+function closeSettings() {
+  const now = advValues();
+  if (advSnapshot && JSON.stringify(now) !== advSnapshot) { // 고급 설정이 바뀌면 저장 후 새로고침
+    LS.set('config', { ...LS.get('config', {}), ...now }); location.reload(); return;
+  }
+  $('#settings').hidden = true;
+}
+function bindSettings() {
+  const box = $('#settings');
+  box.addEventListener('change', e => { const t = e.target; if (t.matches('.ios-toggle[data-key]')) setCfg(t.dataset.key, t.checked); });
+  box.addEventListener('click', e => {
+    const sb = e.target.closest('.seg[data-key] button'); if (sb) { setCfg(sb.parentElement.dataset.key, sb.dataset.v); return; }
+    const sw = e.target.closest('.swatches[data-key] button'); if (sw) { setCfg(sw.parentElement.dataset.key, sw.dataset.v); return; }
+    const ic = e.target.closest('#iconPicker button'); if (ic) { setCfg('meIcon', ic.dataset.icon); return; }
+    if (e.target === box) closeSettings();
+  });
+  $('#settingsDone').onclick = closeSettings;
+  $('#clearTrail').onclick = () => { MV?.clearTrail?.(); toast('지나온 길을 지웠어요'); };
 }
 
 /* ════════════ 12. 이벤트 연결 ════════════ */
@@ -1758,9 +2060,6 @@ function bindUI() {
     else toast('iPhone/iPad는 공유 → "홈 화면에 추가"로 열면 전체 화면이 됩니다.', 5000);
   };
 
-  $('#settingsClose').onclick = () => { $('#settings').hidden = true; };
-  $('#settings').addEventListener('click', e => { if (e.target.id === 'settings') $('#settings').hidden = true; });
-  $('#settingsSave').onclick = saveSettings;
   $('#clearPlaces').onclick = () => { ['home', 'work', 'recents'].forEach(k => LS.del(k)); renderQuick(); toast('기록을 지웠어요'); };
   $('#spLogout').onclick = () => { spLogout(); toast('Spotify에서 로그아웃했어요'); };
 
@@ -1789,13 +2088,15 @@ function bindUI() {
     toast('▶ ' + p.name);
   });
 
-  window.addEventListener('resize', () => MV?.resize());
+  window.addEventListener('resize', () => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); });
 }
 
 /* ════════════ 13. 시작 ════════════ */
 async function main() {
   if (CFG.navMode === 'app') document.body.classList.add('mode-app');
-  document.body.classList.toggle('lite', !!CFG.lite);
+  applyDisplay(); bindSettings();
+  if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) $('#fabFull').hidden = true; // 아이폰은 전체화면 API가 없음
+  $('#fabLocate').classList.add('following');
   applyTheme(); setInterval(applyTheme, 5 * 60e3);
   tickClock(); setInterval(tickClock, 1000);
   setInterval(spTickProgress, 500);
@@ -1810,6 +2111,7 @@ async function main() {
   } else {
     startGeo();
     await initMap();
+    if (CFG.headingUp) applyHeadingUp();
   }
 }
 main();
