@@ -358,12 +358,16 @@ body.no-playlists #spMain{justify-content:center}
 #clockPanel{background:#1c1c1e}
 #clockDate{order:-1;margin:0 0 min(1.5cqh,6px);font-size:min(9cqw,14cqh);font-weight:600;color:rgba(235,235,245,.7)}
 #clockAmPm{display:none}
-#clockTime{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-weight:600;font-size:min(29cqw,48cqh);letter-spacing:-.02em}
+#clockTime{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-weight:600;font-size:min(25cqw,46cqh);letter-spacing:-.02em}
+body.sec-on #clockTime{font-size:min(19cqw,40cqh)}
+#wxRange{white-space:normal;max-width:100%}
+#wxPlace,#wxDesc{max-width:100%}
 #clockTime small{font-size:.42em;font-weight:500;color:rgba(235,235,245,.6);margin-left:.08em}
 #clockTime .ampm{font-size:.36em;font-weight:600;color:rgba(235,235,245,.7);margin-right:.12em}
 body.hide-date #clockDate{display:none}
 #clockGear{top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);color:rgba(235,235,245,.7)}
 #clockGear svg{width:16px;height:16px}
+body:not(.mode-app):not(.map-off) #clockGear{display:none} /* 지도에 설정 버튼이 있으면 시계 칸 버튼은 숨김 */
 
 /* 날씨: iOS 날씨 위젯 느낌 (왼쪽 정렬) */
 #weatherPanel{align-items:flex-start;justify-content:center;text-align:left;padding:min(7cqw,16px) min(8cqw,18px);background:linear-gradient(180deg,#2a5d9f,#173a6b)}
@@ -430,6 +434,32 @@ body.hide-air #wxAir{display:none!important}
 .ver{text-align:center;font-size:12px;color:#636366;margin:22px 0 4px}
 
 .me-dot-halo{transform-box:fill-box}
+/* 내 위치 아이콘: 도는 부분/항상 똑바른 부분 */
+.car-marker{position:relative;transition:none!important;will-change:auto}
+.car-marker .me-rot,.car-marker .me-up{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.car-marker .me-rot{transition:transform .4s linear}
+.car-marker .me-rot > svg,.car-marker .me-up > *{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)} /* 아이콘보다 큰 방향 고리도 정확히 가운데 */
+body.lite .car-marker .me-rot{transition:none}
+.maplibregl-canvas{outline:none}
+#map.maplibregl-map{background:#22262d}
+#osmAttr{max-width:calc(100% - 100px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 지도 끄기: 음악을 크게, 지도 칸은 속도 표시로 */
+body.map-off #map, body.map-off #mapFabs, body.map-off #placeChip, body.map-off #osmAttr{display:none!important}
+body.map-off #navPanel{container-type:size;background:#1c1c1e;cursor:pointer}
+body.map-off #speedo{display:flex!important;position:absolute;inset:0;width:auto;height:auto;min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;flex-direction:column;align-items:center;justify-content:center}
+body.map-off #speedo b{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-size:min(34cqw,50cqh);font-weight:700;line-height:1}
+body.map-off #speedo span{font-size:min(9cqw,13cqh);margin-top:2px}
+body.map-off #speedo::after{content:"눌러서 지도 켜기";font-size:min(6.5cqw,9cqh);color:#636366;margin-top:min(3cqh,8px);font-weight:500}
+body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr);grid-template-rows:repeat(3,minmax(0,1fr));grid-template-areas:"music nav" "music clock" "music weather"}
+@media (max-aspect-ratio:1/1){
+  body.map-off.mode-track #app{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,80fr) minmax(0,20fr);grid-template-areas:"music music music" "clock nav weather"}
+}
+
+/* 날씨: 가운데 정렬 */
+#weatherPanel{align-items:center;text-align:center}
+#wxPlace{justify-content:center}
+.wx-main{justify-content:center}
 </style>
 </head>
 <body>
@@ -486,6 +516,7 @@ body.hide-air #wxAir{display:none!important}
       <button class="fab glass" id="fabLocate" aria-label="현재 위치 따라가기"><svg viewBox="0 0 24 24"><path class="loc-line" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="loc-fill" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="currentColor"/></svg></button>
       <button class="fab glass" id="fabSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="fab glass" id="fabTraffic" aria-label="실시간 교통" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg></button>
+      <button class="fab glass" id="fabMapOff" aria-label="지도 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M3 3l18 18"/></svg></button>
       <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
 
@@ -594,6 +625,8 @@ body.hide-air #wxAir{display:none!important}
         <div class="row"><span>지도 색</span><div class="seg" data-key="theme"><button data-v="auto">자동</button><button data-v="light">밝게</button><button data-v="dark">어둡게</button></div></div>
         <div class="row"><span>확대</span><div class="seg" data-key="zoomMode"><button data-v="auto">속도 맞춤</button><button data-v="near">가까이</button><button data-v="mid">보통</button><button data-v="far">넓게</button></div></div>
         <label class="row"><span>진행 방향으로 지도 돌리기<small>켜면 지도를 손으로 끌 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="headingUp"></label>
+        <label class="row"><span>지도 끄기<small>음악 화면이 커지고 속도만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="mapOff"></label>
+        <label class="row"><span>편의점·병원·주유소·카페 아이콘</span><input type="checkbox" class="ios-toggle" data-key="showPoi"></label>
         <label class="row"><span>지나온 길 표시</span><input type="checkbox" class="ios-toggle" data-key="trail"></label>
         <label class="row"><span>속도계</span><input type="checkbox" class="ios-toggle" data-key="showSpeed"></label>
         <label class="row"><span>지금 달리는 도로 이름</span><input type="checkbox" class="ios-toggle" data-key="showPlace"></label>
@@ -603,6 +636,7 @@ body.hide-air #wxAir{display:none!important}
       <div class="grp-title">화면</div>
       <div class="grp">
         <div class="row"><span>칸 비율</span><div class="seg" data-key="layout"><button data-v="map">지도 크게</button><button data-v="balance">균형</button><button data-v="music">음악 크게</button></div></div>
+        <div class="row"><span>화면 높이 맞춤<small>홈 화면 앱에서 아래가 잘리거나 비면 조절</small></span><div class="seg" id="hAdjSeg"><button data-h="-8">－</button><button data-h="0" id="hAdjVal">0</button><button data-h="8">＋</button></div></div>
         <div class="row"><span>강조 색</span><div class="swatches" data-key="accent"></div></div>
         <label class="row"><span>화면 꺼지지 않게</span><input type="checkbox" class="ios-toggle" data-key="keepAwake"></label>
         <label class="row"><span>가벼운 화면<small>구형 기기용 · 흐림 효과 끄기</small></span><input type="checkbox" class="ios-toggle" data-key="lite"></label>
@@ -695,7 +729,7 @@ body.hide-air #wxAir{display:none!important}
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-27 iOS v5'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-27 iOS v7'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -711,6 +745,9 @@ const DEFAULT_CONFIG = {
   keepAwake: true,       // 화면 꺼짐 방지
   showPlaylists: true, albumBg: true,
   clockSeconds: false, showDate: true, showAir: true,
+  mapOff: false,         // 지도 끄기 (음악 크게 + 속도만 표시)
+  showPoi: true,         // 편의점·병원·주유소·카페 등 아이콘
+  hAdjust: 0,            // 홈 화면 앱 화면 높이 미세 조정(px)
   naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
   spotifyClientId: '7afc32c54551444e93c554bd45a29ebe', // Spotify 앱 Client ID
@@ -738,12 +775,26 @@ if (LS.get('cfgVer') !== 2) { // 위젯 화면으로 바뀐 버전: 기존 기�
    실제 화면 높이로 맞춰 줍니다. */
 const IS_STANDALONE = !!(navigator.standalone || window.matchMedia?.('(display-mode: standalone)').matches);
 const IS_IPHONE = /iPhone|iPod/.test(navigator.userAgent);
+let VP = {};
+function cssPx(decl) { // CSS 값이 실제로 몇 px인지 재기
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:-20px;width:1px;visibility:hidden;pointer-events:none;' + decl;
+  document.body.appendChild(d); const v = d.getBoundingClientRect().height; d.remove(); return Math.round(v);
+}
 function fitViewport() {
   let h = window.innerHeight;
   if (IS_STANDALONE && IS_IPHONE) {
     const portrait = window.matchMedia('(orientation: portrait)').matches;
-    h = Math.max(h, portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height));
+    const scr = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    const safeTop = cssPx('height:env(safe-area-inset-top)');
+    const cands = [window.innerHeight, cssPx('height:100vh'), cssPx('height:100lvh'), Math.round(window.visualViewport?.height || 0), document.documentElement.clientHeight];
+    const best = Math.max(...cands);
+    // 상태바 뒤까지 그려지는 경우(safeTop>0)만 화면 전체 높이, 아니면 상태바를 뺀 높이 안에서 가장 큰 값
+    h = safeTop > 0 || !portrait ? Math.max(best, Math.min(scr, best + 80)) : Math.min(best, scr - 20);
+    if (safeTop > 0 || !portrait) h = Math.min(h, scr);
+    VP = { h, scr, safeTop, cands };
   }
+  h += Number(CFG.hAdjust) || 0;
   document.documentElement.style.setProperty('--appH', h + 'px');
 }
 fitViewport();
@@ -831,24 +882,40 @@ function meIconSvg(kind, c, sz) {
   if (String(kind).startsWith('emoji:')) return `<span class="me-emoji" style="font-size:${Math.round(sz * .78)}px">${kind.slice(6)}</span>`;
   return `<svg viewBox="0 0 44 44" width="${sz}" height="${sz}"><circle cx="22" cy="22" r="20" fill="${c}" opacity=".22"/><path d="M22 6 L33 34 L22 27.5 L11 34 Z" fill="${c}" stroke="${ring}" stroke-width="2.6" stroke-linejoin="round"/></svg>`;
 }
-function meIconHTML() { const sz = meSizePx(); return `<div id="carMarker" class="car-marker" style="width:${sz}px;height:${sz}px">${meIconSvg(CFG.meIcon, CFG.meColor, sz)}</div>`; }
+function meDirSvg(c, sz) { // 이모지 아이콘 둘레의 진행 방향 표시 (고리 + 앞쪽 삼각형)
+  const S = Math.round(sz * 1.55), ring = c.toLowerCase() === '#ffffff' ? '#1c1c1e' : '#fff';
+  return `<svg viewBox="0 0 60 60" width="${S}" height="${S}"><path d="M30 30 L18 5 A27 27 0 0 1 42 5 Z" fill="${c}" opacity=".32"/><circle cx="30" cy="30" r="17.5" fill="rgba(0,0,0,.25)" stroke="${c}" stroke-width="2.6"/><path d="M30 1.5 L37 11.5 H23 Z" fill="${c}" stroke="${ring}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+}
+function meIconHTML() {
+  const sz = meSizePx(), k = CFG.meIcon, c = CFG.meColor, emoji = String(k).startsWith('emoji:');
+  return `<div id="carMarker" class="car-marker" style="width:${sz}px;height:${sz}px"><div class="me-rot">${emoji ? meDirSvg(c, sz) : meIconSvg(k, c, sz)}</div>${emoji ? `<div class="me-up">${meIconSvg(k, c, Math.round(sz * .85))}</div>` : ''}</div>`;
+}
 const DEST_HTML = `<div><svg viewBox="0 0 36 46" width="36" height="46"><path d="M18 44s15-15.6 15-27A15 15 0 0 0 3 17c0 11.4 15 27 15 27z" fill="#ff4d4f" stroke="#fff" stroke-width="2.5"/><circle cx="18" cy="17" r="5.5" fill="#fff"/></svg></div>`;
 let carRot = 0, mapRot = 0, lastShownH = 0;
 const unwrap = (prev, next) => prev + ((((next - prev) % 360) + 540) % 360) - 180; // 359°→1° 처럼 돌 때 한 바퀴 돌지 않게
-function headingUpActive() { return !!CFG.headingUp && MV?.kind === 'leaflet' && CFG.navMode !== 'app'; }
+function headingUpActive() { return !!CFG.headingUp && (MV?.kind === 'leaflet' || MV?.kind === 'gl') && CFG.navMode !== 'app'; }
 function rotateCar(h) {
   lastShownH = h || 0;
   const el = document.getElementById('carMarker'); if (!el) return;
-  if (String(CFG.meIcon).startsWith('emoji:')) { el.style.transform = headingUpActive() ? `rotate(${mapRot}deg)` : ''; return; } // 이모지는 항상 똑바로
-  carRot = unwrap(carRot, lastShownH);
-  el.style.transform = `rotate(${carRot}deg)`;
+  const rot = el.querySelector('.me-rot'), up = el.querySelector('.me-up');
+  const glUp = MV?.kind === 'gl' && headingUpActive(); // 지도 자체가 돌아가 있으면 그만큼 빼기
+  carRot = unwrap(carRot, glUp ? lastShownH - mapRot : lastShownH);
+  if (rot) rot.style.transform = `rotate(${carRot}deg)`;
+  if (up) up.style.transform = (MV?.kind === 'leaflet' && headingUpActive()) ? `rotate(${mapRot}deg)` : ''; // 이모지는 항상 똑바로
 }
 function setMapRotation(h) {
   if (!headingUpActive()) return;
   mapRot = unwrap(mapRot, h || 0);
+  if (MV.kind === 'gl') { if (!S.follow) MV.map.easeTo({ bearing: mapRot, duration: 600 }); return; }
   $('#map').style.setProperty('--rot', (-mapRot) + 'deg');
 }
 function applyHeadingUp() {
+  if (!MV) return;
+  if (MV.kind === 'gl') { // 벡터 지도는 지도 자체를 돌림 (글자는 똑바로 유지)
+    mapRot = headingUpActive() ? unwrap(mapRot, S.heading || 0) : 0;
+    if (S.pos && S.follow) followCamera(S.pos, true); else MV.map.easeTo({ bearing: mapRot, duration: 500 });
+    rotateCar(lastShownH); return;
+  }
   const panel = $('#navPanel'), m = $('#map'), on = headingUpActive();
   panel.classList.toggle('heading-up', on);
   if (on) {
@@ -952,7 +1019,7 @@ const LeafletAdapter = {
   kind: 'leaflet',
   init(el, c) {
     this.map = L.map(el, { zoomControl: false, attributionControl: false }).setView([c.lat, c.lng], 16);
-    $('#osmAttr').hidden = false; // 저작권 표시는 지도 밖에 고정 (지도를 돌려도 보이게)
+    $('#osmAttr').innerHTML = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'; $('#osmAttr').hidden = false; // 저작권 표시는 지도 밖에 고정
     this.applyTheme();
     this.map.on('dragstart', onUserMapMove);
     this.map.on('click', onMapClick);
@@ -1013,6 +1080,163 @@ const LeafletAdapter = {
   destroy() { try { this.map.remove(); } catch {} this.me = this.dest = this.line = this.lineBg = this.tiles = this.trailLine = null; $('#map').innerHTML = ''; $('#osmAttr').hidden = true; }
 };
 
+/* ════════════ 네이버 지도풍 지도 스타일 (OpenFreeMap 벡터 지도, 키 필요 없음) ════════════ */
+const MAP_PAL = {
+  day: {
+    bg: '#f6f5f2', land: '#efede8', park: '#d3e9c2', water: '#a9d3ef', bld: '#eae7e1', bldLine: '#e0dcd5',
+    minor: '#ffffff', minorCase: '#d9d5cd', ter: '#ffffff', terCase: '#cfc9be', sec: '#fff2bf', secCase: '#e3c873',
+    pri: '#ffe08a', priCase: '#dcab44', trunk: '#ffcf78', trunkCase: '#e0a03a', mw: '#ffae5a', mwCase: '#d47f28',
+    rail: '#bdb9b2', text: '#383838', halo: '#ffffff', place: '#454545'
+  },
+  night: {
+    bg: '#22262d', land: '#262a32', park: '#22352a', water: '#1a3045', bld: '#292d34', bldLine: '#2f343c',
+    minor: '#3c424c', minorCase: '#22262d', ter: '#4a515c', terCase: '#22262d', sec: '#665d43', secCase: '#22262d',
+    pri: '#8a733e', priCase: '#22262d', trunk: '#987a3f', trunkCase: '#22262d', mw: '#b0793f', mwCase: '#22262d',
+    rail: '#3a3f48', text: '#d4d7dc', halo: '#22262d', place: '#e8eaed'
+  }
+};
+let OFM = null;
+async function getOfmBase() { // 타일·글꼴 주소는 OpenFreeMap이 바꿀 수 있어서 공식 스타일에서 읽어 옴
+  if (OFM) return OFM;
+  try { const s = await fetchJSON('https://tiles.openfreemap.org/styles/liberty'); OFM = { src: s.sources.openmaptiles, glyphs: s.glyphs }; }
+  catch { OFM = { src: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' }, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf' }; }
+  return OFM;
+}
+function buildMapStyle(dark, base) {
+  const P = dark ? MAP_PAL.night : MAP_PAL.day, S = 'openmaptiles';
+  const z = (a, b, c) => ['interpolate', ['exponential', 1.4], ['zoom'], 10, a, 14, b, 18, c];
+  const cls = list => ['match', ['get', 'class'], list, true, false];
+  const name = ['coalesce', ['get', 'name:ko'], ['get', 'name']];
+  const road = (id, classes, w, color, casing, minzoom) => [
+    { id: id + '-case', type: 'line', source: S, 'source-layer': 'transportation', minzoom, filter: cls(classes),
+      layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': casing, 'line-width': z(w[0] + 1, w[1] + 2, w[2] + 3) } },
+    { id, type: 'line', source: S, 'source-layer': 'transportation', minzoom, filter: cls(classes),
+      layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': color, 'line-width': z(w[0], w[1], w[2]) } }
+  ];
+  return {
+    version: 8, glyphs: base.glyphs, sources: { [S]: base.src },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': P.bg } },
+      { id: 'landuse', type: 'fill', source: S, 'source-layer': 'landuse', filter: cls(['residential', 'suburb', 'neighbourhood', 'commercial', 'retail', 'industrial']), paint: { 'fill-color': P.land } },
+      { id: 'park', type: 'fill', source: S, 'source-layer': 'park', paint: { 'fill-color': P.park } },
+      { id: 'green', type: 'fill', source: S, 'source-layer': 'landcover', filter: cls(['grass', 'wood', 'forest', 'farmland']), paint: { 'fill-color': P.park, 'fill-opacity': .6 } },
+      { id: 'water', type: 'fill', source: S, 'source-layer': 'water', paint: { 'fill-color': P.water } },
+      { id: 'building', type: 'fill', source: S, 'source-layer': 'building', minzoom: 16, paint: { 'fill-color': P.bld, 'fill-outline-color': P.bldLine } },
+      { id: 'rail', type: 'line', source: S, 'source-layer': 'transportation', minzoom: 12, filter: cls(['rail', 'transit']), paint: { 'line-color': P.rail, 'line-width': z(.5, 1, 2), 'line-dasharray': [3, 3] } },
+      ...road('r-service', ['service', 'track'], [0, .8, 5], P.minor, P.minorCase, 15),
+      ...road('r-minor', ['minor'], [.3, 1.8, 9], P.minor, P.minorCase, 12),
+      ...road('r-tertiary', ['tertiary'], [.6, 3, 12], P.ter, P.terCase, 10),
+      ...road('r-secondary', ['secondary'], [.8, 3.6, 14], P.sec, P.secCase, 8),
+      ...road('r-primary', ['primary'], [1, 4.4, 16], P.pri, P.priCase, 7),
+      ...road('r-trunk', ['trunk'], [1.2, 5, 18], P.trunk, P.trunkCase, 5),
+      ...road('r-motorway', ['motorway'], [1.4, 5.5, 19], P.mw, P.mwCase, 4),
+      { id: 'poi', type: 'symbol', source: S, 'source-layer': 'poi', minzoom: 15,
+        filter: ['any', ['match', ['get', 'subclass'], ['convenience', 'pharmacy', 'charging_station', 'parking'], true, false], ['match', ['get', 'class'], ['hospital', 'cafe', 'fuel'], true, false]],
+        layout: { visibility: CFG.showPoi ? 'visible' : 'none',
+          'icon-image': ['match', ['get', 'subclass'], 'convenience', 'poi-conv', 'pharmacy', 'poi-pharm', 'charging_station', 'poi-ev', 'parking', 'poi-park',
+            ['match', ['get', 'class'], 'hospital', 'poi-hosp', 'cafe', 'poi-cafe', 'fuel', 'poi-fuel', 'poi-conv']],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 15, .8, 17, 1],
+          'text-field': ['step', ['zoom'], '', 16, name], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.25], 'text-anchor': 'top',
+          'text-optional': true, 'text-max-width': 8, 'symbol-sort-key': ['get', 'rank'] },
+        paint: { 'text-color': P.text, 'text-halo-color': P.halo, 'text-halo-width': 1.5 } },
+      { id: 'road-name-minor', type: 'symbol', source: S, 'source-layer': 'transportation_name', minzoom: 16, filter: cls(['minor', 'tertiary']),
+        layout: { 'symbol-placement': 'line', 'text-field': name, 'text-font': ['Noto Sans Regular'], 'text-size': 13, 'text-max-angle': 30, 'symbol-spacing': 320 },
+        paint: { 'text-color': P.text, 'text-halo-color': P.halo, 'text-halo-width': 1.6 } },
+      { id: 'road-name', type: 'symbol', source: S, 'source-layer': 'transportation_name', minzoom: 12, filter: cls(['motorway', 'trunk', 'primary', 'secondary']),
+        layout: { 'symbol-placement': 'line', 'text-field': name, 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 12, 12, 17, 16], 'text-max-angle': 30, 'symbol-spacing': 360, 'text-padding': 6 },
+        paint: { 'text-color': P.text, 'text-halo-color': P.halo, 'text-halo-width': 2 } },
+      { id: 'place', type: 'symbol', source: S, 'source-layer': 'place', minzoom: 11, filter: cls(['city', 'town', 'suburb', 'quarter', 'neighbourhood', 'village']),
+        layout: { 'text-field': name, 'text-font': ['Noto Sans Bold'], 'text-size': ['match', ['get', 'class'], 'city', 19, 'town', 17, 'suburb', 16, 'quarter', 15, 14], 'text-padding': 14 },
+        paint: { 'text-color': P.place, 'text-halo-color': P.halo, 'text-halo-width': 2, 'text-opacity': .9 } }
+    ]
+  };
+}
+
+// 장소 아이콘: 네이버 지도처럼 색 동그라미 + 그림 (필요할 때 그려서 지도에 등록)
+const POI_ICONS = { 'poi-conv': ['#5b6cf0', '🏪'], 'poi-hosp': ['#f03e3e', '🏥'], 'poi-pharm': ['#e64980', '💊'], 'poi-fuel': ['#f76707', '⛽'],
+  'poi-ev': ['#12b886', '🔌'], 'poi-cafe': ['#8d5a3b', '☕'], 'poi-park': ['#1c7ed6', 'P'] };
+function poiImage(id) {
+  const [bg, g] = POI_ICONS[id], r = 2, S = 30 * r, c = document.createElement('canvas'); c.width = c.height = S;
+  const x = c.getContext('2d');
+  x.beginPath(); x.arc(S / 2, S / 2, S / 2 - 2 * r, 0, Math.PI * 2); x.fillStyle = bg; x.fill(); x.lineWidth = 2 * r; x.strokeStyle = '#fff'; x.stroke();
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  if (g === 'P') { x.fillStyle = '#fff'; x.font = `bold ${16 * r}px -apple-system,sans-serif`; x.fillText('P', S / 2, S / 2 + r); }
+  else { x.font = `${14 * r}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; x.fillText(g, S / 2, S / 2 + r); }
+  return { img: x.getImageData(0, 0, S, S), pixelRatio: r };
+}
+async function loadMapLibre() {
+  if (window.maplibregl) return;
+  loadCss('https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css');
+  await loadScript('https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js');
+}
+const ATTR_GL = '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+const EMPTY_FC = { type: 'FeatureCollection', features: [] };
+const trailColor = () => CFG.meColor === '#ffffff' ? '#aeaeb2' : CFG.meColor;
+const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
+  kind: 'gl',
+  async init(el, c) {
+    const base = await getOfmBase();
+    this.dark = isDarkMap(); this.route = []; this.prog = null; this.trailPts = [];
+    this.map = new maplibregl.Map({
+      container: el, style: buildMapStyle(this.dark, base), center: [c.lng, c.lat], zoom: 16,
+      attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false, maxPitch: 0, fadeDuration: 0,
+      localIdeographFontFamily: '"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif'
+    });
+    this.map.touchZoomRotate.disableRotation();
+    this.map.on('dragstart', onUserMapMove);
+    this.map.on('click', onMapClick);
+    this.map.on('style.load', () => this.addOverlays());
+    this.map.on('styleimagemissing', e => { if (POI_ICONS[e.id] && !this.map.hasImage(e.id)) { const { img, pixelRatio } = poiImage(e.id); this.map.addImage(e.id, img, { pixelRatio }); } });
+    $('#osmAttr').innerHTML = ATTR_GL; $('#osmAttr').hidden = false;
+  },
+  addOverlays() {
+    const m = this.map, rl = { 'line-cap': 'round', 'line-join': 'round' };
+    if (!m.getSource('trail')) { m.addSource('trail', { type: 'geojson', data: EMPTY_FC }); m.addLayer({ id: 'trail', type: 'line', source: 'trail', layout: rl, paint: { 'line-color': trailColor(), 'line-width': 5, 'line-opacity': .55 } }); }
+    if (!m.getSource('route')) {
+      m.addSource('route', { type: 'geojson', data: EMPTY_FC });
+      m.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: rl, paint: { 'line-color': '#0b3a7a', 'line-width': 13 } });
+      m.addLayer({ id: 'route', type: 'line', source: 'route', layout: rl, paint: { 'line-color': '#3b9bff', 'line-width': 8 } });
+    }
+    this.syncTrail(); this.syncRoute();
+  },
+  line(c) { return c.length > 1 ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } } : EMPTY_FC; },
+  syncRoute() { this.map?.getSource('route')?.setData(this.line(this.prog || this.route)); },
+  syncTrail() { this.map?.getSource('trail')?.setData(this.line(this.trailPts)); },
+  panTo(p, zoom) { this.map.easeTo({ center: [p.lng, p.lat], zoom: zoom ?? this.map.getZoom(), bearing: headingUpActive() ? mapRot : 0, duration: 800, easing: t => t }); },
+  fit(points, pad) { const b = bbox(points); this.map.fitBounds([[b.w, b.s], [b.e, b.n]], { padding: pad, bearing: 0, duration: 600 }); },
+  setRoute(points) { this.route = points.map(p => [p.lng, p.lat]); this.prog = null; this.syncRoute(); },
+  setProgress(i, pt) { this.prog = [[pt.lng, pt.lat], ...this.route.slice(i + 1)]; this.syncRoute(); },
+  clearRoute() { this.route = []; this.prog = null; this.syncRoute(); },
+  setMe(p, h) {
+    if (!this.me) {
+      const w = document.createElement('div'); w.innerHTML = meIconHTML();
+      this.me = new maplibregl.Marker({ element: w.firstElementChild, rotationAlignment: 'viewport', pitchAlignment: 'viewport' }).setLngLat([p.lng, p.lat]).addTo(this.map);
+    } else this.me.setLngLat([p.lng, p.lat]);
+    rotateCar(h);
+  },
+  setDest(p) {
+    if (!p) { this.dest?.remove(); this.dest = null; return; }
+    if (!this.dest) { const w = document.createElement('div'); w.innerHTML = DEST_HTML; this.dest = new maplibregl.Marker({ element: w.firstElementChild, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(this.map); }
+    else this.dest.setLngLat([p.lng, p.lat]);
+  },
+  center() { const c = this.map.getCenter(); return { lat: c.lat, lng: c.lng }; },
+  resize() { this.map?.resize(); },
+  async applyTheme() { const d = isDarkMap(); if (!this.map || d === this.dark) return; this.dark = d; this.map.setStyle(buildMapStyle(d, await getOfmBase()), { diff: false }); },
+  refreshMe() {
+    if (this.me) { const ll = this.me.getLngLat(); this.me.remove(); this.me = null; this.setMe({ lat: ll.lat, lng: ll.lng }, lastShownH); }
+    if (this.map.getLayer('trail')) this.map.setPaintProperty('trail', 'line-color', trailColor());
+  },
+  addTrail(p) {
+    if (!CFG.trail) return;
+    const last = this.trailPts[this.trailPts.length - 1];
+    if (last && hav({ lat: last[1], lng: last[0] }, p) < 8) return;
+    this.trailPts.push([p.lng, p.lat]); if (this.trailPts.length > 2000) this.trailPts.shift();
+    this.syncTrail();
+  },
+  clearTrail() { this.trailPts = []; this.syncTrail(); },
+  destroy() { try { this.map.remove(); } catch {} this.map = this.me = this.dest = null; $('#map').innerHTML = ''; $('#osmAttr').hidden = true; }
+};
+
 let MV = null; // 현재 사용 중인 지도 어댑터
 let switching = false;
 
@@ -1040,11 +1264,17 @@ async function loadLeaflet() {
   loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
   await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
 }
-async function initMap() {
+let mapInitP = null;
+function initMap() { return mapInitP ||= initMapOnce(); }
+async function initMapOnce() {
   const c = S.pos || LS.get('lastPos') || DEFAULT_CENTER;
   if (CFG.naverKeyId && CFG.navMode === 'builtin') {
     try { await loadNaver(CFG.naverKeyId); MV = NaverAdapter; MV.init($('#map'), c); }
     catch (e) { console.warn(e); MV = null; toast('네이버 지도를 불러오지 못해 OpenStreetMap을 사용합니다.', 5000); }
+  }
+  if (!MV) { // 네이버풍 벡터 지도 → 안 되면(WebGL 없음 등) OpenStreetMap 그림 지도
+    try { await loadMapLibre(); MV = GLAdapter; await MV.init($('#map'), c); }
+    catch (e) { console.warn('vector map', e); try { GLAdapter.destroy(); } catch {} MV = null; }
   }
   if (!MV) { await loadLeaflet(); MV = LeafletAdapter; MV.init($('#map'), c); }
   redrawMap();
@@ -1090,7 +1320,7 @@ function setFollow(on) {
   if (on && S.pos) followCamera(S.pos, true);
 }
 function followCamera(p, force) {
-  if (!MV || (!S.follow && !force)) return;
+  if (!MV || (!S.follow && !force) || (CFG.mapOff && CFG.navMode === 'track')) return;
   let z = null;
   const kmh = S.speed * 3.6;
   if (S.nav) z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15;
@@ -1138,7 +1368,7 @@ function handlePosition(fix) {
   }
   if (Date.now() - lastSave > 30000 && !S.sim) { lastSave = Date.now(); LS.set('lastPos', { lat: fix.lat, lng: fix.lng }); }
   maybeUpdateWeather();
-  if (CFG.navMode === 'track') maybeUpdatePlace(fix);
+  if (CFG.navMode === 'track' && !CFG.mapOff) maybeUpdatePlace(fix);
 }
 const PL = { last: null, t: 0, busy: false };
 async function maybeUpdatePlace(p) {
@@ -2002,6 +2232,8 @@ function applyDisplay() {
   b.classList.toggle('no-albumbg', !CFG.albumBg);
   b.classList.toggle('hide-date', !CFG.showDate);
   b.classList.toggle('hide-air', !CFG.showAir);
+  b.classList.toggle('sec-on', !!CFG.clockSeconds);
+  b.classList.toggle('map-off', !!CFG.mapOff && CFG.navMode === 'track');
   document.documentElement.style.setProperty('--accent', CFG.accent);
 }
 function setCfg(k, v) {
@@ -2016,6 +2248,12 @@ function setCfg(k, v) {
   if (k === 'keepAwake') { if (v) keepAwake(); else { try { wakeLock?.release(); } catch {} wakeLock = null; } }
   if (k === 'clock24' || k === 'clockSeconds') tickClock();
   if (k === 'voice') renderVoiceBtn();
+  if (k === 'mapOff') {
+    if (!v) { initMap().then(() => setTimeout(() => { MV?.resize(); if (S.pos) { MV?.setMe(S.pos, lastShownH); followCamera(S.pos, true); } }, 60)); }
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
+  }
+  if (k === 'hAdjust') fitViewport();
+  if (k === 'showPoi' && MV?.kind === 'gl' && MV.map.getLayer('poi')) MV.map.setLayoutProperty('poi', 'visibility', v ? 'visible' : 'none');
   renderSettingsControls();
 }
 function renderSettingsControls() {
@@ -2027,6 +2265,7 @@ function renderSettingsControls() {
     if (!s.children.length) s.innerHTML = list.map(c => `<button data-v="${c}" style="background:${c}" aria-label="색 ${c}"></button>`).join('');
     s.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === CFG[s.dataset.key]));
   });
+  $('#hAdjVal').textContent = (CFG.hAdjust > 0 ? '+' : '') + (CFG.hAdjust || 0);
   $('#iconPicker').innerHTML = ME_ICONS.map(([k, label]) =>
     `<button data-icon="${k}" class="${k === CFG.meIcon ? 'on' : ''}"><span class="pv">${meIconSvg(k, CFG.meColor, 34)}</span>${label}</button>`).join('');
 }
@@ -2044,6 +2283,7 @@ function openSettings() {
   st.push(`지도: <b>${MV?.kind === 'naver' ? '네이버 지도' : MV ? 'OpenStreetMap' : '사용 안 함'}</b>`);
   if (CFG.navMode === 'builtin') st.push(`길찾기: <b>${CFG.proxyUrl ? '네이버 Directions' : 'OSRM (교통 미반영)'}</b>`);
   st.push(`Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`);
+  if (VP.h) st.push(`화면: <b>${VP.h}px</b> <span style="color:#636366">(화면 ${VP.scr} · 상단 ${VP.safeTop} · ${VP.cands.join('/')})</span>`);
   $('#statusBox').innerHTML = st.join('<br>');
   $('#verLabel').textContent = 'My CarPlay · ' + APP_VERSION;
   $('#settings').hidden = false;
@@ -2066,6 +2306,12 @@ function bindSettings() {
   });
   $('#settingsDone').onclick = closeSettings;
   $('#clearTrail').onclick = () => { MV?.clearTrail?.(); toast('지나온 길을 지웠어요'); };
+  $('#hAdjSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
+    const d = +b.dataset.h; setCfg('hAdjust', d === 0 ? 0 : (Number(CFG.hAdjust) || 0) + d);
+  });
+  $('#fabMapOff').onclick = e => { e.stopPropagation(); setCfg('mapOff', true); toast('지도를 껐어요. 속도 칸을 누르면 다시 켜져요.'); };
+  $('#navPanel').addEventListener('click', () => { if (CFG.mapOff && CFG.navMode === 'track') setCfg('mapOff', false); });
 }
 
 /* ════════════ 12. 이벤트 연결 ════════════ */
@@ -2177,7 +2423,7 @@ async function main() {
     geoForWeather();
   } else {
     startGeo();
-    await initMap();
+    if (!(CFG.mapOff && CFG.navMode === 'track')) await initMap();
     if (CFG.headingUp) applyHeadingUp();
   }
 }
