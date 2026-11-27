@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My CarPlay">
+<meta name="theme-color" content="#000000">
+<title>My CarPlay</title>
+<!--
+  My CarPlay 대시보드 (단일 HTML)
+  ─────────────────────────────────────────────
+  · 왼쪽: 내비게이션 (네이버 지도 / 키가 없으면 OpenStreetMap으로 자동 대체)
+  · 오른쪽 위: Spotify 재생화면 + 플레이리스트 (휴대폰의 Spotify를 원격 조작)
+  · 오른쪽 아래: 시계, 날씨/온도/미세먼지
+  키는 화면 오른쪽 위 ⚙ 설정에서 입력하거나, 아래 DEFAULT_CONFIG에 직접 적어도 됩니다.
+  ※ 위치(GPS)와 Spotify 로그인은 HTTPS 주소에서만 동작합니다 (예: GitHub Pages).
+-->
+<style>
+:root{
+  --bg:#000; --panel:#15161a; --panel2:#1e2026; --panel3:#272a31; --line:#2c2f36;
+  --text:#f3f4f6; --sub:#9ca3af; --accent:#3b9bff; --green:#1ed760; --turn:#1d6f47;
+  --red:#ff4d4f; --gap:8px; --r:20px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+input,select{font:inherit;color:inherit}
+[hidden]{display:none!important}
+svg{display:block}
+
+/* ───── 레이아웃 (스케치와 같은 비율) ───── */
+#app{position:fixed;inset:0;display:grid;gap:var(--gap);
+  padding:calc(var(--gap) + env(safe-area-inset-top)) calc(var(--gap) + env(safe-area-inset-right)) calc(var(--gap) + env(safe-area-inset-bottom)) calc(var(--gap) + env(safe-area-inset-left));
+  grid-template-columns:minmax(0,74fr) minmax(0,13fr) minmax(0,13fr);
+  grid-template-rows:minmax(0,66fr) minmax(0,34fr);
+  grid-template-areas:"nav music music" "nav clock weather"}
+.panel{position:relative;overflow:hidden;border-radius:var(--r);background:var(--panel)}
+#navPanel{grid-area:nav;background:#222}
+#musicPanel{grid-area:music;container-type:size}
+#clockPanel{grid-area:clock;container-type:size}
+#weatherPanel{grid-area:weather;container-type:size}
+@media (max-aspect-ratio: 1/1){
+  #app{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,58fr) minmax(0,26fr) minmax(0,16fr);
+    grid-template-areas:"nav nav" "music music" "clock weather"}
+}
+
+/* ───── 지도 ───── */
+#map{position:absolute;inset:0}
+body.map-dark:not(.traffic-on) #map.is-naver img{filter:invert(.92) hue-rotate(180deg) saturate(.75) brightness(.95)}
+.car-marker{width:44px;height:44px;transition:transform .4s linear;will-change:transform}
+.leaflet-div-icon-clear{background:none;border:0}
+.leaflet-container{background:#1b1c20}
+
+.glass{background:rgba(22,23,27,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.overlay-tl{position:absolute;top:12px;left:12px;width:min(430px,calc(100% - 88px));z-index:500}
+
+/* 검색 */
+#searchBox{padding:8px}
+.search-row{display:flex;align-items:center;gap:8px;background:var(--panel3);border-radius:12px;padding:0 6px 0 12px}
+.search-row svg{flex:none;opacity:.6}
+#searchInput{flex:1;min-width:0;height:48px;border:0;outline:0;background:none;font-size:18px;-webkit-user-select:text;user-select:text}
+#searchClear{width:36px;height:36px;border-radius:50%;opacity:.6;font-size:18px}
+#quickRow{display:flex;gap:8px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+#quickRow::-webkit-scrollbar{display:none}
+.chip{flex:none;height:40px;padding:0 14px;border-radius:20px;background:var(--panel3);font-size:15px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chip.on{background:var(--accent);color:#fff}
+#searchResults{max-height:min(52vh,460px);overflow-y:auto;margin-top:6px;-webkit-overflow-scrolling:touch}
+.res{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 8px;border-radius:12px}
+.res:active{background:var(--panel3)}
+.res-ico{flex:none;width:36px;height:36px;border-radius:50%;background:var(--panel3);display:grid;place-items:center;font-size:17px}
+.res-body{flex:1;min-width:0}
+.res-name{font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-addr{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.res-dist{flex:none;font-size:13px;color:var(--sub)}
+.res-empty{padding:14px 10px;color:var(--sub);font-size:15px}
+
+/* 경로 미리보기 카드 */
+#routeCard{padding:16px}
+.rc-name{font-size:21px;font-weight:700;line-height:1.25}
+.rc-addr{font-size:14px;color:var(--sub);margin-top:4px}
+.rc-sum{display:flex;align-items:baseline;gap:10px;margin-top:14px;flex-wrap:wrap}
+.rc-time{font-size:32px;font-weight:800;color:#6ee7a8}
+.rc-dist{font-size:17px;color:var(--text)}
+.rc-meta{font-size:14px;color:var(--sub);margin-top:4px;line-height:1.5}
+.rc-opts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.rc-opts .chip{height:36px;font-size:14px}
+.rc-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.btn{height:52px;border-radius:14px;background:var(--panel3);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.danger{background:var(--red);color:#fff}
+.btn.small{height:40px;font-size:14px;border-radius:12px}
+.rc-sub{display:flex;gap:8px;margin-top:8px}
+.rc-sub .btn{flex:1}
+
+/* 턴 안내 배너 */
+#turnBanner{background:var(--turn);border-radius:18px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#turnIcon{flex:none;width:76px;height:76px;color:#fff}
+#turnIcon svg{width:100%;height:100%}
+.turn-body{flex:1;min-width:0}
+#turnDist{font-size:40px;font-weight:800;line-height:1;letter-spacing:-.5px}
+#turnText{font-size:19px;font-weight:600;margin-top:6px;line-height:1.3;word-break:keep-all}
+#turnNext{margin-top:6px;background:rgba(0,0,0,.25);border-radius:12px;padding:8px 12px;font-size:15px;display:flex;gap:8px;align-items:center}
+#turnNext svg{width:22px;height:22px}
+#turnWrap{display:flex;flex-direction:column}
+
+/* 하단 내비 바 */
+#navBar{position:absolute;left:12px;right:12px;bottom:12px;z-index:500;display:flex;align-items:center;gap:6px;padding:8px 8px 8px 18px;max-width:720px}
+.eta{flex:1;min-width:0;text-align:center}
+.eta b{display:block;font-size:24px;font-weight:800;white-space:nowrap}
+.eta span{font-size:12px;color:var(--sub)}
+.eta.main b{color:#6ee7a8}
+.nb-btn{flex:none;width:54px;height:54px;border-radius:14px;background:var(--panel3);display:grid;place-items:center;font-size:20px}
+.nb-btn.danger{background:var(--red);color:#fff;width:auto;padding:0 16px;font-size:16px;font-weight:700}
+
+/* 속도계, 버튼 */
+#speedo{position:absolute;left:12px;bottom:12px;z-index:400;width:76px;height:76px;border-radius:50%;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+#speedo b{font-size:28px;line-height:1;font-weight:800}
+#speedo span{font-size:11px;color:#555}
+#navPanel.navigating #speedo{bottom:96px}
+#mapFabs{position:absolute;top:12px;right:12px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.fab{width:56px;height:56px;border-radius:16px;display:grid;place-items:center}
+.fab svg{width:26px;height:26px}
+.fab.active{color:var(--accent)}
+#simBadge{position:absolute;right:12px;bottom:96px;z-index:500;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 14px;font-size:14px;font-weight:600;color:#ffd166}
+#simBadge button{height:36px;min-width:44px;border-radius:10px;background:var(--panel3);font-size:14px;color:var(--text)}
+#simBadge button.on{background:#ffd166;color:#111}
+
+/* ───── Spotify ───── */
+#musicPanel{display:flex;flex-direction:column}
+.sp-bg{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(40px) saturate(1.3) brightness(.45);opacity:.9;transition:background-image .6s}
+.sp-wrap{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:clamp(12px,4cqw,22px)}
+.sp-connect{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:10px}
+.sp-connect p{margin:0;color:var(--sub);font-size:15px;line-height:1.5;word-break:keep-all}
+.sp-logo{width:64px;height:64px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#000}
+.sp-now{display:flex;gap:clamp(10px,4cqw,18px);align-items:center}
+#spArt{flex:none;width:clamp(64px,30cqw,150px);aspect-ratio:1;border-radius:12px;object-fit:cover;background:var(--panel3);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.sp-meta{flex:1;min-width:0}
+#spTitle{font-size:clamp(16px,6cqw,24px);font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+#spArtist{font-size:clamp(13px,4.4cqw,17px);color:#d1d5db;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spDevice{font-size:12px;color:var(--green);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-progress{margin-top:clamp(10px,3cqh,18px);height:22px;display:flex;align-items:center;cursor:pointer}
+.sp-track{position:relative;flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.22)}
+#spBar{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:#fff;width:0}
+.sp-times{display:flex;justify-content:space-between;font-size:12px;color:#c7c9ce;font-variant-numeric:tabular-nums}
+.sp-ctrls{display:flex;align-items:center;justify-content:space-between;margin:clamp(4px,1.5cqh,12px) 0}
+.sp-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;opacity:.95}
+.sp-btn svg{width:26px;height:26px}
+.sp-btn.small svg{width:21px;height:21px}
+.sp-btn.off{opacity:.45}
+.sp-btn.on{color:var(--green);opacity:1}
+.sp-btn.play{width:64px;height:64px;background:#fff;color:#000}
+.sp-btn.play svg{width:30px;height:30px}
+.sp-btn{position:relative}
+.sp-btn .one{position:absolute;right:6px;top:6px;font-size:9px;font-weight:800;background:var(--green);color:#000;border-radius:6px;padding:0 3px}
+.sp-list-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;color:#d1d5db;margin:4px 0 6px}
+.sp-list-head button{font-size:13px;color:var(--sub);padding:4px 8px}
+.sp-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -6px}
+.pl{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:7px 6px;border-radius:12px}
+.pl:active{background:rgba(255,255,255,.08)}
+.pl.playing .pl-name{color:var(--green)}
+.pl img,.pl .pl-ph{flex:none;width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--panel3)}
+.pl-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-sub{font-size:12px;color:var(--sub);margin-top:2px}
+.pl-body{min-width:0;flex:1}
+
+/* ───── 시계 ───── */
+#clockPanel{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px}
+#clockAmPm{font-size:min(9cqw,11cqh);color:var(--sub);font-weight:600;height:1.2em}
+#clockTime{font-size:min(30cqw,36cqh);font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#clockDate{font-size:min(9cqw,10cqh);color:var(--sub);margin-top:min(3cqh,10px);font-weight:500}
+
+/* ───── 날씨 ───── */
+#weatherPanel{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;
+  background:linear-gradient(160deg,#1f3b63 0%,#15161a 85%)}
+#weatherPanel.night{background:linear-gradient(160deg,#1a1d3a 0%,#15161a 85%)}
+#wxPlace{font-size:min(8cqw,9cqh);color:#cbd5e1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.wx-main{display:flex;align-items:center;gap:min(3cqw,8px);margin-top:min(2cqh,6px)}
+#wxIcon{font-size:min(20cqw,24cqh);line-height:1}
+#wxTemp{font-size:min(24cqw,28cqh);font-weight:300;line-height:1}
+#wxDesc{font-size:min(8.5cqw,9.5cqh);font-weight:600;margin-top:min(2cqh,6px)}
+#wxRange{font-size:min(7.5cqw,8.5cqh);color:#cbd5e1;margin-top:2px}
+#wxAir{font-size:min(7cqw,8cqh);margin-top:min(2.5cqh,8px);padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.1);white-space:nowrap}
+
+/* ───── 설정, 토스트 ───── */
+.modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
+.sheet{width:min(560px,100%);max-height:100%;overflow-y:auto;background:var(--panel);border-radius:22px;padding:22px;border:1px solid var(--line)}
+.sheet h2{margin:0 0 4px;font-size:22px}
+.sheet .desc{color:var(--sub);font-size:13px;margin:0 0 16px;line-height:1.5}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.field input[type=text],.field select{width:100%;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);padding:0 12px;font-size:15px;-webkit-user-select:text;user-select:text}
+.field .hint{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.5;word-break:break-all}
+.field code{background:var(--panel3);padding:1px 6px;border-radius:6px;font-size:12px}
+.check{display:flex;align-items:center;justify-content:space-between;height:46px;font-size:15px;border-bottom:1px solid var(--line)}
+.check input{width:22px;height:22px}
+.sheet-btns{display:flex;gap:8px;margin-top:18px}
+.sheet-btns .btn{flex:1}
+.status{font-size:13px;color:var(--sub);background:var(--panel2);border-radius:12px;padding:10px 12px;line-height:1.7;margin-bottom:16px}
+.status b{color:var(--text)}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:3000;background:rgba(30,32,38,.97);color:#fff;
+  padding:12px 20px;border-radius:14px;font-size:15px;max-width:min(560px,90vw);text-align:center;opacity:0;pointer-events:none;transition:.25s;border:1px solid var(--line);word-break:keep-all}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ───── 네이버 지도 앱 연동 모드 (iPad 분할 화면용) ───── */
+#launchPanel{grid-area:nav;display:flex;flex-direction:column;gap:12px;padding:18px;background:linear-gradient(160deg,#10301f 0%,#15161a 70%)}
+body.mode-app #navPanel{display:none}
+body:not(.mode-app) #launchPanel{display:none}
+#clockGear{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#e5e7eb;background:rgba(255,255,255,.08)}
+#clockGear svg{width:20px;height:20px}
+#fabTraffic.on{color:#22c55e}
+.lp-head{display:flex;align-items:center;gap:12px}
+.lp-logo{flex:none;width:44px;height:44px;border-radius:14px;background:var(--turn);color:#fff;display:grid;place-items:center}
+.lp-title{font-size:21px;font-weight:800}
+.lp-sub{font-size:13px;color:var(--sub);margin-top:2px}
+#lpSearchForm{margin:0}
+#lpSearch{flex:1;min-width:0;height:50px;border:0;outline:0;background:none;font-size:18px;-webkit-user-select:text;user-select:text}
+.lp-gear{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--sub)}
+.lp-gear svg{width:22px;height:22px}
+#lpGrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-rows:92px;gap:10px;align-content:start;overflow-y:auto}
+.lp-btn{border-radius:18px;background:var(--panel3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:16px;font-weight:700;padding:0 8px;min-width:0}
+.lp-btn:active{transform:scale(.97)}
+.lp-btn .e{font-size:28px;line-height:1}
+.lp-btn small{font-size:12px;color:var(--sub);font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-btn.main{background:var(--turn);color:#fff}
+.lp-btn.main small{color:#c9f2da}
+.lp-btn.unset{opacity:.55}
+.lp-tip{font-size:13px;color:var(--sub);line-height:1.6;background:rgba(255,255,255,.05);border-radius:12px;padding:10px 14px}
+@media (max-width:700px), (max-aspect-ratio:1/1){
+  body.mode-app #app{grid-template-columns:1fr 1fr;grid-template-rows:auto minmax(0,1fr) minmax(0,22%);grid-template-areas:"nav nav" "music music" "clock weather"}
+  body.mode-app #launchPanel{padding:10px;gap:8px}
+  body.mode-app .lp-head, body.mode-app .lp-tip{display:none}
+  body.mode-app #lpGrid{display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;flex:none}
+  body.mode-app #lpGrid::-webkit-scrollbar{display:none}
+  body.mode-app .lp-btn{flex:none;width:78px;height:68px;font-size:13px;border-radius:14px}
+  body.mode-app .lp-btn .e{font-size:22px}
+  body.mode-app .lp-btn small{display:none}
+}
+.fav-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fav-row .n{flex:1;min-width:0}
+.fav-row .n b{display:block;font-size:15px}
+.fav-row .n span{font-size:12px;color:var(--sub)}
+.fav-add{display:flex;gap:8px;margin-top:8px}
+.fav-add input,.fav-add select{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);padding:0 12px;font-size:15px;min-width:0}
+.fav-add input{flex:1;-webkit-user-select:text;user-select:text}
+#favResults .res{padding:10px 6px}
+
+/* ───── 가벼운 화면 (구형 iPad용: 블러·필터 끄기) ───── */
+body.lite .glass{background:rgba(22,23,27,.97);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+body.lite .sp-bg{inset:0;filter:none;opacity:.18;transition:none}
+body.lite #musicPanel{background:#121317}
+body.lite.map-dark #map.is-naver img{filter:none}
+body.lite #turnBanner,body.lite #speedo,body.lite #spArt{box-shadow:none}
+body.lite .car-marker{transition:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════ 내비게이션 ══════════ -->
+  <section id="navPanel" class="panel">
+    <div id="map"></div>
+
+    <div class="overlay-tl">
+      <!-- 검색 -->
+      <div id="searchBox" class="glass">
+        <div class="search-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="searchInput" type="search" placeholder="어디로 갈까요?" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="searchClear" hidden aria-label="지우기">✕</button>
+        </div>
+        <div id="quickRow"></div>
+        <div id="searchResults" hidden></div>
+      </div>
+
+      <!-- 경로 미리보기 -->
+      <div id="routeCard" class="glass" hidden>
+        <div class="rc-name" id="rcName"></div>
+        <div class="rc-addr" id="rcAddr"></div>
+        <div class="rc-sum"><span class="rc-time" id="rcTime">경로 탐색 중…</span><span class="rc-dist" id="rcDist"></span></div>
+        <div class="rc-meta" id="rcMeta"></div>
+        <div class="rc-opts" id="rcOpts"></div>
+        <div class="rc-btns">
+          <button class="btn primary" id="rcStart">안내 시작</button>
+          <button class="btn" id="rcSim">모의주행</button>
+        </div>
+        <div class="rc-sub">
+          <button class="btn small" id="rcHome">🏠 집으로 저장</button>
+          <button class="btn small" id="rcWork">🏢 회사로 저장</button>
+          <button class="btn small" id="rcCancel">닫기</button>
+        </div>
+      </div>
+
+      <!-- 턴바이턴 배너 -->
+      <div id="turnWrap" hidden>
+        <div id="turnBanner">
+          <div id="turnIcon"></div>
+          <div class="turn-body">
+            <div id="turnDist"></div>
+            <div id="turnText"></div>
+          </div>
+        </div>
+        <div id="turnNext" hidden></div>
+      </div>
+    </div>
+
+    <div id="mapFabs">
+      <button class="fab glass" id="fabLocate" aria-label="현재 위치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+      <button class="fab glass" id="fabSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="fab glass" id="fabTraffic" aria-label="실시간 교통" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg></button>
+      <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+
+    <div id="speedo"><b id="speedVal">0</b><span>km/h</span></div>
+
+    <div id="simBadge" class="glass" hidden>
+      모의주행
+      <button data-mult="1" class="on">×1</button><button data-mult="3">×3</button><button data-mult="8">×8</button>
+    </div>
+
+    <div id="navBar" class="glass" hidden>
+      <div class="eta main"><b id="etaTime">--:--</b><span>도착 예정</span></div>
+      <div class="eta"><b id="remainTime">-</b><span>남은 시간</span></div>
+      <div class="eta"><b id="remainDist">-</b><span>남은 거리</span></div>
+      <button class="nb-btn" id="btnOverview" aria-label="경로 전체 보기">🗺️</button>
+      <button class="nb-btn" id="btnVoice" aria-label="음성 안내">🔊</button>
+      <button class="nb-btn danger" id="btnStop">종료</button>
+    </div>
+  </section>
+
+  <!-- ══════════ 네이버 지도 앱 실행 패널 (앱 연동 모드) ══════════ -->
+  <section id="launchPanel" class="panel">
+    <div class="lp-head">
+      <div class="lp-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 19-8-4.5L4 21z"/></svg></div>
+      <div><div class="lp-title">네이버 지도로 안내</div><div class="lp-sub">실시간 교통 · 신호등 · 단속카메라는 네이버 지도 앱이 담당해요</div></div>
+    </div>
+    <form class="search-row" id="lpSearchForm" action="#">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="lpSearch" type="search" placeholder="네이버 지도에서 검색" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="lp-gear" id="lpSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    </form>
+    <div id="lpGrid"></div>
+    <div class="lp-tip">💡 버튼을 누르면 네이버 지도 앱이 열리며 바로 안내가 시작돼요. 이 화면으로 돌아올 땐 화면 맨 아래 막대를 옆으로 쓸어 넘기면 됩니다. 한 화면에서 지도와 음악을 같이 보고 싶으면 ⚙ 설정 → 내비게이션 방식 → <b>내장 내비게이션</b>을 고르세요.</div>
+  </section>
+
+  <!-- ══════════ Spotify ══════════ -->
+  <section id="musicPanel" class="panel">
+    <div class="sp-bg" id="spBg"></div>
+    <div class="sp-wrap">
+      <div id="spConnect" class="sp-connect">
+        <div class="sp-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 18.5a2.5 2.5 0 1 1-2.5-2.5c.53 0 1.02.17 1.5.45V5.2l11-2.2v12.5a2.5 2.5 0 1 1-2.5-2.5c.53 0 1.02.17 1.5.45V7.3l-9 1.8z"/></svg></div>
+        <p id="spConnectMsg">Spotify를 연결하면 휴대폰에서 재생 중인 음악을 여기서 조작할 수 있어요.</p>
+        <button class="btn primary" id="spLoginBtn" style="background:var(--green);color:#000">Spotify 연결</button>
+      </div>
+      <div id="spMain" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
+        <div class="sp-now">
+          <img id="spArt" alt="">
+          <div class="sp-meta">
+            <div id="spTitle">-</div>
+            <div id="spArtist"></div>
+            <div id="spDevice"></div>
+          </div>
+        </div>
+        <div class="sp-progress" id="spProgress"><div class="sp-track"><div id="spBar"></div></div></div>
+        <div class="sp-times"><span id="spCur">0:00</span><span id="spDur">0:00</span></div>
+        <div class="sp-ctrls">
+          <button class="sp-btn small off" id="spShuffle" aria-label="셔플"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+          <button class="sp-btn" id="spPrev" aria-label="이전 곡"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM20 5v14L9.5 12z"/></svg></button>
+          <button class="sp-btn play" id="spPlay" aria-label="재생/일시정지"></button>
+          <button class="sp-btn" id="spNext" aria-label="다음 곡"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM4 5v14l10.5-7z"/></svg></button>
+          <button class="sp-btn small off" id="spRepeat" aria-label="반복"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg><span class="one" hidden>1</span></button>
+        </div>
+        <div class="sp-list-head"><span>내 플레이리스트</span><button id="spReload">새로고침</button></div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 시계 ══════════ -->
+  <section id="clockPanel" class="panel">
+    <button id="clockGear" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+    <div id="clockAmPm"></div>
+    <div id="clockTime">--:--</div>
+    <div id="clockDate"></div>
+  </section>
+
+  <!-- ══════════ 날씨 ══════════ -->
+  <section id="weatherPanel" class="panel">
+    <div id="wxPlace">현재 위치</div>
+    <div class="wx-main"><span id="wxIcon">⛅</span><span id="wxTemp">--°</span></div>
+    <div id="wxDesc">날씨 불러오는 중</div>
+    <div id="wxRange"></div>
+    <div id="wxAir" hidden></div>
+  </section>
+</div>
+
+<!-- 설정 -->
+<div id="settings" class="modal" hidden>
+  <div class="sheet">
+    <h2>설정</h2>
+    <p class="desc">입력한 값은 이 기기의 브라우저에만 저장됩니다.</p>
+    <div class="status" id="statusBox"></div>
+
+    <div class="field">
+      <label for="cfgNavMode">내비게이션 방식</label>
+      <select id="cfgNavMode">
+        <option value="builtin">이 화면 안의 내장 내비게이션 (네이버 지도 + 실시간 교통)</option>
+        <option value="app">버튼으로 네이버 지도 앱 실행 (신호등·카메라 안내는 앱에서)</option>
+      </select>
+      <div class="hint">'네이버 지도 앱 실행' 방식에서는 아래 네이버 Client ID / 프록시 주소가 필요 없어요.</div>
+    </div>
+    <div class="field">
+      <label for="cfgNaver">네이버 지도 Client ID (ncpKeyId)</label>
+      <input type="text" id="cfgNaver" placeholder="비워두면 OpenStreetMap 지도 사용" autocomplete="off" spellcheck="false">
+      <div class="hint">네이버 클라우드 콘솔 → Maps → Application에서 발급. Web 서비스 URL에 <code id="originHint"></code> 을 등록해야 합니다.</div>
+    </div>
+    <div class="field">
+      <label for="cfgProxy">길찾기 프록시 주소 (Cloudflare Worker)</label>
+      <input type="text" id="cfgProxy" placeholder="https://carplay-proxy.○○○.workers.dev" autocomplete="off" spellcheck="false">
+      <div class="hint">넣으면 네이버 실시간 교통 길찾기와 장소 검색을 씁니다. 비워두면 OSRM 무료 경로(교통 미반영)를 씁니다.</div>
+    </div>
+    <div class="field">
+      <label for="cfgSpotify">Spotify Client ID</label>
+      <input type="text" id="cfgSpotify" placeholder="Spotify Developer Dashboard의 Client ID" autocomplete="off" spellcheck="false">
+      <div class="hint">앱 설정의 Redirect URI에 <code id="redirectHint"></code> 를 그대로 등록하세요.</div>
+    </div>
+    <div class="field">
+      <label for="cfgTheme">지도 테마</label>
+      <select id="cfgTheme">
+        <option value="auto">자동 (저녁 6시~아침 7시 어둡게)</option>
+        <option value="dark">항상 어둡게</option>
+        <option value="light">항상 밝게</option>
+      </select>
+    </div>
+    <label class="check">가벼운 화면 (구형 iPad 추천 · 블러 효과 끔) <input type="checkbox" id="cfgLite"></label>
+    <label class="check">음성 안내 <input type="checkbox" id="cfgVoice"></label>
+    <label class="check">24시간제 시계 <input type="checkbox" id="cfgClock24"></label>
+
+    <div class="sheet-btns">
+      <button class="btn small" id="clearPlaces">집·회사·최근 기록 지우기</button>
+      <button class="btn small" id="spLogout">Spotify 로그아웃</button>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn" id="settingsClose">취소</button>
+      <button class="btn primary" id="settingsSave">저장 후 새로고침</button>
+    </div>
+  </div>
+</div>
+
+<!-- 즐겨찾기 편집 -->
+<div id="favModal" class="modal" hidden>
+  <div class="sheet">
+    <h2>목적지 버튼 편집</h2>
+    <p class="desc">버튼을 누르면 네이버 지도 앱에서 바로 내비게이션이 시작돼요. 목적지는 이 기기에만 저장됩니다.</p>
+    <div id="favList"></div>
+    <div class="field" style="margin-top:16px">
+      <label>새 목적지 추가</label>
+      <div class="fav-add">
+        <select id="favSlot"><option value="home">🏠 집</option><option value="work">🏢 회사</option><option value="fav" selected>⭐ 즐겨찾기</option></select>
+        <input type="text" id="favName" placeholder="버튼 이름 (예: 부모님 댁)">
+      </div>
+      <div class="fav-add">
+        <input type="text" id="favQuery" placeholder="주소 검색 또는 위도,경도" enterkeyhint="search">
+        <button class="btn small" id="favSearchBtn">검색</button>
+      </div>
+      <div class="fav-add"><button class="btn small" id="favHere" style="flex:1">📍 지금 있는 위치로 저장</button></div>
+      <div class="hint">주소 검색은 무료 OpenStreetMap이라 상호명은 잘 안 나올 수 있어요. 그럴 땐 그 장소에 있을 때 '지금 위치로 저장'을 쓰거나, 네이버 지도에서 좌표를 복사해 <code>37.5665,126.9780</code>처럼 붙여넣으세요.</div>
+      <div id="favResults"></div>
+    </div>
+    <div class="sheet-btns"><button class="btn primary" id="favClose">완료</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   0. 설정
+   여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
+   (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
+   ════════════════════════════════════════════════════════════ */
+const DEFAULT_CONFIG = {
+  navMode: 'builtin',    // builtin: 이 화면 안의 내비게이션 | app: 버튼으로 네이버 지도 앱 실행
+  lite: true,            // 가벼운 화면: 블러/필터 효과를 꺼서 구형 iPad에서도 부드럽게
+  naverKeyId: '',       // 네이버 클라우드 Maps Application Client ID
+  proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
+  spotifyClientId: '',   // Spotify 앱 Client ID
+  theme: 'auto',         // auto | dark | light
+  voice: true,           // 음성 안내
+  clock24: true,         // 24시간제
+  traffic: true,         // 내장 내비: 네이버 실시간 교통 레이어 표시
+  routeOption: 'trafast' // trafast(빠른길) | tracomfort(편한길) | traoptimal(최적) | traavoidtoll(무료우선)
+};
+
+const LS = {
+  get(k, d = null) { try { const v = localStorage.getItem('cp.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('cp.' + k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem('cp.' + k); } catch {} }
+};
+const CFG = { ...DEFAULT_CONFIG };
+for (const [k, v] of Object.entries(LS.get('config', {}) || {})) if (v !== '' && v != null) CFG[k] = v;
+if (!['builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'builtin'; // 없어진 '웹페이지 그대로' 모드 → 내장 내비
+
+/* ════════════ 1. 유틸 ════════════ */
+const $ = (s, r = document) => r.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DEG = Math.PI / 180;
+
+function hav(a, b) {
+  const dLat = (b.lat - a.lat) * DEG, dLng = (b.lng - a.lng) * DEG;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(x)));
+}
+function bearing(a, b) {
+  const y = Math.sin((b.lng - a.lng) * DEG) * Math.cos(b.lat * DEG);
+  const x = Math.cos(a.lat * DEG) * Math.sin(b.lat * DEG) - Math.sin(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.cos((b.lng - a.lng) * DEG);
+  return (Math.atan2(y, x) / DEG + 360) % 360;
+}
+function fmtDist(m) {
+  if (m >= 10000) return Math.round(m / 1000) + ' km';
+  if (m >= 1000) return (m / 1000).toFixed(1) + ' km';
+  if (m >= 100) return Math.round(m / 10) * 10 + ' m';
+  return Math.max(0, Math.round(m / 5) * 5) + ' m';
+}
+function spokenDist(m) {
+  if (m >= 1000) { const k = Math.round(m / 100) / 10; return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + '킬로미터'; }
+  return (m >= 100 ? Math.round(m / 50) * 50 : Math.round(m / 10) * 10) + '미터';
+}
+function fmtDur(sec) {
+  const m = Math.max(1, Math.round(sec / 60));
+  if (m < 60) return m + '분';
+  return Math.floor(m / 60) + '시간 ' + (m % 60 ? (m % 60) + '분' : '');
+}
+function fmtClock(d) {
+  const h = d.getHours(), mm = String(d.getMinutes()).padStart(2, '0');
+  return CFG.clock24 ? `${String(h).padStart(2, '0')}:${mm}` : `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${mm}`;
+}
+function fmtMs(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+let toastTimer;
+function toast(msg, ms = 3200) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+async function fetchJSON(url, opts = {}, timeout = 12000) {
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), timeout);
+  try {
+    const r = await fetch(url, { ...opts, signal: ac.signal });
+    const j = await r.json().catch(() => null);
+    if (!r.ok) throw new Error((j && (j.error?.message || j.error || j.message)) || 'HTTP ' + r.status);
+    return j;
+  } finally { clearTimeout(tm); }
+}
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); });
+}
+function loadCss(href) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); }
+
+/* ════════════ 2. 아이콘 ════════════ */
+const svgI = d => `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const TURN_ICONS = {
+  'straight':     svgI('<path d="M24 42V8M12 20L24 8l12 12"/>'),
+  'left':         svgI('<path d="M32 42V25a7 7 0 0 0-7-7H9M17 10l-8 8 8 8"/>'),
+  'right':        svgI('<path d="M16 42V25a7 7 0 0 1 7-7h16M31 10l8 8-8 8"/>'),
+  'slight-left':  svgI('<path d="M30 42V29L13 12M12 25V11h14"/>'),
+  'slight-right': svgI('<path d="M18 42V29L35 12M36 25V11H22"/>'),
+  'uturn':        svgI('<path d="M32 42V19a9 9 0 0 0-18 0v15M7 27l7 7 7-7"/>'),
+  'roundabout':   svgI('<circle cx="24" cy="19" r="7"/><path d="M24 42V26M29 14l9-8M30 6h8v8"/>'),
+  'waypoint':     svgI('<circle cx="24" cy="20" r="9"/><path d="M24 29v13"/>'),
+  'dest':         svgI('<path d="M14 43V7M14 8h22l-5 8 5 8H14"/>')
+};
+const CAR_HTML = `<div id="carMarker" class="car-marker"><svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="20" fill="rgba(59,155,255,.22)"/><path d="M22 6 L33 34 L22 27.5 L11 34 Z" fill="#3b9bff" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg></div>`;
+const DEST_HTML = `<div><svg viewBox="0 0 36 46" width="36" height="46"><path d="M18 44s15-15.6 15-27A15 15 0 0 0 3 17c0 11.4 15 27 15 27z" fill="#ff4d4f" stroke="#fff" stroke-width="2.5"/><circle cx="18" cy="17" r="5.5" fill="#fff"/></svg></div>`;
+function rotateCar(h) { const el = document.getElementById('carMarker'); if (el) el.style.transform = `rotate(${Math.round(h || 0)}deg)`; }
+
+/* ════════════ 3. 상태 ════════════ */
+const S = {
+  pos: null,       // 화면에 쓰는 위치 (모의주행이면 가상 위치)
+  realPos: null,   // 실제 GPS 위치
+  heading: 0, speed: 0,
+  follow: true,    // 지도가 내 위치를 따라가는지
+  nav: null,       // 안내 중인 경로 상태
+  preview: null,   // 미리보기 중인 경로 {dest, route}
+  sim: null,
+  geoErrShown: false
+};
+const DEFAULT_CENTER = { lat: 37.5666, lng: 126.9784 }; // 서울시청
+
+/* ════════════ 4. 지도 어댑터 (네이버 / Leaflet) ════════════ */
+function bbox(points) {
+  let s = 90, w = 180, n = -90, e = -180;
+  for (const p of points) { if (p.lat < s) s = p.lat; if (p.lat > n) n = p.lat; if (p.lng < w) w = p.lng; if (p.lng > e) e = p.lng; }
+  return { s, w, n, e };
+}
+
+const NaverAdapter = {
+  kind: 'naver',
+  init(el, c) {
+    el.classList.add('is-naver');
+    this.map = new naver.maps.Map(el, {
+      center: new naver.maps.LatLng(c.lat, c.lng), zoom: 16,
+      zoomControl: false, mapDataControl: false, scaleControl: false,
+      logoControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT }
+    });
+    naver.maps.Event.addListener(this.map, 'dragstart', onUserMapMove);
+    naver.maps.Event.addListener(this.map, 'pinchstart', onUserMapMove);
+    naver.maps.Event.addListener(this.map, 'click', onMapClick);
+    // 네이버 실시간 교통 레이어 (도로 색으로 정체 표시, 5분마다 갱신)
+    try {
+      this.traffic = new naver.maps.TrafficLayer({ interval: 300000 });
+      let shown = false;
+      const show = () => { if (!shown) { shown = true; this.setTraffic(CFG.traffic); } };
+      naver.maps.Event.once(this.map, 'init', show); setTimeout(show, 1500);
+      $('#fabTraffic').hidden = false;
+    } catch (e) { console.warn('traffic layer', e); }
+  },
+  ll(p) { return new naver.maps.LatLng(p.lat, p.lng); },
+  panTo(p, zoom) {
+    if (zoom != null && this.map.getZoom() !== zoom) this.map.setZoom(zoom, true);
+    this.map.panTo(this.ll(p), { duration: 500, easing: 'linear' });
+  },
+  fit(points, pad) {
+    const b = bbox(points);
+    this.map.fitBounds(new naver.maps.LatLngBounds(new naver.maps.LatLng(b.s, b.w), new naver.maps.LatLng(b.n, b.e)), pad);
+  },
+  setRoute(points) {
+    this.clearRoute();
+    this.llPath = points.map(p => this.ll(p));
+    const common = { map: this.map, path: this.llPath, strokeLineCap: 'round', strokeLineJoin: 'round' };
+    this.lineBg = new naver.maps.Polyline({ ...common, strokeColor: '#0b3a7a', strokeWeight: 13, strokeOpacity: .95 });
+    this.line = new naver.maps.Polyline({ ...common, strokeColor: '#3b9bff', strokeWeight: 8, strokeOpacity: 1 });
+  },
+  setProgress(i, pt) {
+    if (!this.line) return;
+    const path = [this.ll(pt), ...this.llPath.slice(i + 1)];
+    this.line.setPath(path); this.lineBg.setPath(path);
+  },
+  clearRoute() { this.line?.setMap(null); this.lineBg?.setMap(null); this.line = this.lineBg = null; },
+  setMe(p, h) {
+    if (!this.me) this.me = new naver.maps.Marker({ map: this.map, position: this.ll(p), zIndex: 1000, icon: { content: CAR_HTML, anchor: new naver.maps.Point(22, 22) } });
+    else this.me.setPosition(this.ll(p));
+    rotateCar(h);
+  },
+  setDest(p) {
+    if (!p) { this.dest?.setMap(null); this.dest = null; return; }
+    if (!this.dest) this.dest = new naver.maps.Marker({ map: this.map, position: this.ll(p), zIndex: 900, icon: { content: DEST_HTML, anchor: new naver.maps.Point(18, 44) } });
+    else this.dest.setPosition(this.ll(p));
+  },
+  setTraffic(on) {
+    if (!this.traffic) return;
+    this.traffic.setMap(on ? this.map : null);
+    document.body.classList.toggle('traffic-on', !!on); $('#fabTraffic').classList.toggle('on', !!on);
+  },
+  center() { const c = this.map.getCenter(); return { lat: c.lat(), lng: c.lng() }; },
+  resize() { const el = $('#map'); if (this.map.autoResize) this.map.autoResize(); else this.map.setSize(new naver.maps.Size(el.clientWidth, el.clientHeight)); },
+  applyTheme() {},
+  destroy() { try { this.map.destroy(); } catch {} this.me = this.dest = this.line = this.lineBg = null; $('#map').classList.remove('is-naver'); $('#map').innerHTML = ''; }
+};
+
+const LeafletAdapter = {
+  kind: 'leaflet',
+  init(el, c) {
+    this.map = L.map(el, { zoomControl: false, attributionControl: true }).setView([c.lat, c.lng], 16);
+    this.applyTheme();
+    this.map.on('dragstart', onUserMapMove);
+    this.map.on('click', onMapClick);
+  },
+  applyTheme() {
+    const dark = isDarkMap();
+    if (this.tiles && this.tilesDark === dark) return;
+    this.tiles?.remove();
+    this.tilesDark = dark;
+    this.tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`, {
+      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }).addTo(this.map);
+  },
+  panTo(p, zoom) {
+    if (zoom != null && this.map.getZoom() !== zoom) this.map.setView([p.lat, p.lng], zoom, { animate: true });
+    else this.map.panTo([p.lat, p.lng], { animate: true, duration: .5, easeLinearity: 1 });
+  },
+  fit(points, pad) {
+    const b = bbox(points);
+    this.map.fitBounds([[b.s, b.w], [b.n, b.e]], { paddingTopLeft: [pad.left, pad.top], paddingBottomRight: [pad.right, pad.bottom] });
+  },
+  setRoute(points) {
+    this.clearRoute();
+    this.path = points.map(p => [p.lat, p.lng]);
+    this.lineBg = L.polyline(this.path, { color: '#0b3a7a', weight: 13, opacity: .95, lineCap: 'round', lineJoin: 'round' }).addTo(this.map);
+    this.line = L.polyline(this.path, { color: '#3b9bff', weight: 8, opacity: 1, lineCap: 'round', lineJoin: 'round' }).addTo(this.map);
+  },
+  setProgress(i, pt) {
+    if (!this.line) return;
+    const path = [[pt.lat, pt.lng], ...this.path.slice(i + 1)];
+    this.line.setLatLngs(path); this.lineBg.setLatLngs(path);
+  },
+  clearRoute() { this.line?.remove(); this.lineBg?.remove(); this.line = this.lineBg = null; },
+  setMe(p, h) {
+    if (!this.me) this.me = L.marker([p.lat, p.lng], { zIndexOffset: 1000, icon: L.divIcon({ html: CAR_HTML, className: 'leaflet-div-icon-clear', iconSize: [44, 44], iconAnchor: [22, 22] }) }).addTo(this.map);
+    else this.me.setLatLng([p.lat, p.lng]);
+    rotateCar(h);
+  },
+  setDest(p) {
+    if (!p) { this.dest?.remove(); this.dest = null; return; }
+    if (!this.dest) this.dest = L.marker([p.lat, p.lng], { icon: L.divIcon({ html: DEST_HTML, className: 'leaflet-div-icon-clear', iconSize: [36, 46], iconAnchor: [18, 44] }) }).addTo(this.map);
+    else this.dest.setLatLng([p.lat, p.lng]);
+  },
+  center() { const c = this.map.getCenter(); return { lat: c.lat, lng: c.lng }; },
+  resize() { this.map.invalidateSize(); },
+  destroy() { try { this.map.remove(); } catch {} this.me = this.dest = this.line = this.lineBg = this.tiles = null; $('#map').innerHTML = ''; }
+};
+
+let MV = null; // 현재 사용 중인 지도 어댑터
+
+function loadNaver(id) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const fail = e => { if (!done) { done = true; reject(e); } };
+    window.navermap_authFailure = () => {
+      if (!done) fail(new Error('auth'));
+      else { toast('네이버 지도 인증 실패: Web 서비스 URL 등록을 확인하세요. OpenStreetMap으로 전환합니다.', 6000); switchToLeaflet(); }
+    };
+    const s = document.createElement('script');
+    s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(id)}&submodules=geocoder`;
+    s.onerror = () => fail(new Error('load'));
+    s.onload = () => {
+      const ok = () => { if (!done) { done = true; resolve(); } };
+      if (window.naver?.maps?.Service) ok();
+      else { naver.maps.onJSContentLoaded = ok; setTimeout(ok, 4000); }
+    };
+    document.head.appendChild(s);
+  });
+}
+async function loadLeaflet() {
+  if (window.L) return;
+  loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+  await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+}
+async function initMap() {
+  const c = S.pos || LS.get('lastPos') || DEFAULT_CENTER;
+  if (CFG.naverKeyId) {
+    try { await loadNaver(CFG.naverKeyId); MV = NaverAdapter; MV.init($('#map'), c); }
+    catch (e) { console.warn(e); MV = null; toast('네이버 지도를 불러오지 못해 OpenStreetMap을 사용합니다.', 5000); }
+  }
+  if (!MV) { await loadLeaflet(); MV = LeafletAdapter; MV.init($('#map'), c); }
+  redrawMap();
+}
+async function switchToLeaflet() {
+  if (MV === LeafletAdapter) return;
+  const c = MV ? MV.center() : (S.pos || DEFAULT_CENTER);
+  MV?.destroy(); $('#fabTraffic').hidden = true; document.body.classList.remove('traffic-on');
+  await loadLeaflet(); MV = LeafletAdapter; MV.init($('#map'), c);
+  redrawMap();
+}
+function redrawMap() {
+  if (!MV) return;
+  const R = S.nav?.route || S.preview?.route;
+  if (R) MV.setRoute(R.path);
+  const d = S.nav?.dest || S.preview?.dest;
+  if (d) MV.setDest(d);
+  if (S.pos) MV.setMe(S.pos, S.heading);
+}
+function isDarkMap() {
+  if (CFG.theme === 'dark') return true;
+  if (CFG.theme === 'light') return false;
+  const h = new Date().getHours(); return h >= 18 || h < 7;
+}
+function applyTheme() { document.body.classList.toggle('map-dark', isDarkMap()); MV?.applyTheme(); }
+
+/* ════════════ 5. 위치 ════════════ */
+let followTimer = null;
+function onUserMapMove() {
+  S.follow = false; $('#fabLocate').classList.add('active');
+  clearTimeout(followTimer);
+  if (S.nav) followTimer = setTimeout(() => setFollow(true), 12000); // 안내 중엔 12초 뒤 자동 복귀
+}
+function setFollow(on) {
+  S.follow = on; $('#fabLocate').classList.toggle('active', !on);
+  if (on && S.pos) followCamera(S.pos, true);
+}
+function followCamera(p, force) {
+  if (!MV || (!S.follow && !force)) return;
+  let z = null;
+  if (S.nav) { const kmh = S.speed * 3.6; z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15; }
+  MV.panTo(p, z);
+}
+function onMapClick() { $('#searchInput').blur(); hideResults(); }
+
+function startGeo() {
+  if (!('geolocation' in navigator)) { toast('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
+  navigator.geolocation.watchPosition(p => {
+    const fix = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: p.timestamp || Date.now() };
+    S.realPos = fix;
+    if (!S.sim) handlePosition(fix);
+  }, err => {
+    if (S.geoErrShown) return; S.geoErrShown = true;
+    const msg = err.code === 1 ? '위치 권한이 거부됐어요. 브라우저 설정에서 위치를 허용해 주세요.'
+      : location.protocol !== 'https:' ? '위치는 HTTPS 주소에서만 동작합니다.' : '현재 위치를 찾을 수 없습니다.';
+    toast(msg, 6000);
+  }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+}
+
+let firstFix = true, lastSave = 0;
+function handlePosition(fix) {
+  const prev = S.pos;
+  let h = (fix.heading != null && !isNaN(fix.heading) && (fix.speed || 0) > 1.5) ? fix.heading : null;
+  if (h == null && prev && hav(prev, fix) > 5) h = bearing(prev, fix);
+  if (h != null) S.heading = h;
+  if (fix.speed != null && fix.speed >= 0) S.speed = fix.speed;
+  else if (prev && fix.t > prev.t) S.speed = hav(prev, fix) / ((fix.t - prev.t) / 1000);
+  S.pos = fix;
+  $('#speedVal').textContent = Math.round(S.speed * 3.6);
+
+  let shown = fix, shownH = S.heading;
+  if (S.nav) {
+    const r = navUpdate(fix);
+    if (r && r.d < 35) { shown = r.point; if (S.speed < 1.5 || h == null) shownH = r.bearing; }
+  }
+  if (MV) {
+    MV.setMe(shown, shownH);
+    if (firstFix) { firstFix = false; S.follow = true; MV.panTo(shown, 16); }
+    else followCamera(shown);
+  }
+  if (Date.now() - lastSave > 30000 && !S.sim) { lastSave = Date.now(); LS.set('lastPos', { lat: fix.lat, lng: fix.lng }); }
+  maybeUpdateWeather();
+}
+
+/* ════════════ 6. 검색 ════════════ */
+let searchSeq = 0, searchTimer = null;
+const Places = {
+  recents() { return LS.get('recents', []); },
+  addRecent(it) {
+    const r = this.recents().filter(x => hav(x, it) > 30);
+    r.unshift({ name: it.name, addr: it.addr || '', lat: it.lat, lng: it.lng });
+    LS.set('recents', r.slice(0, 12));
+  },
+  get(key) { return LS.get(key); },
+  set(key, it) { LS.set(key, { name: it.name, addr: it.addr || '', lat: it.lat, lng: it.lng }); renderQuick(); }
+};
+
+function renderQuick() {
+  const home = Places.get('home'), work = Places.get('work');
+  const q = $('#quickRow');
+  q.innerHTML = `
+    <button class="chip" data-q="home">🏠 집${home ? '' : ' <small style="opacity:.5">미설정</small>'}</button>
+    <button class="chip" data-q="work">🏢 회사${work ? '' : ' <small style="opacity:.5">미설정</small>'}</button>
+    <button class="chip" data-q="주유소">⛽ 주유소</button>
+    <button class="chip" data-q="전기차 충전소">🔌 충전소</button>
+    <button class="chip" data-q="주차장">🅿️ 주차장</button>
+    <button class="chip" data-q="카페">☕ 카페</button>`;
+}
+function onQuick(key) {
+  if (key === 'home' || key === 'work') {
+    const p = Places.get(key);
+    if (p) selectDest(p); else toast(`목적지를 검색해서 고른 뒤 '${key === 'home' ? '집' : '회사'}으로 저장'을 누르세요.`);
+    return;
+  }
+  $('#searchInput').value = key; $('#searchClear').hidden = false; doSearch(key);
+}
+function hideResults() { $('#searchResults').hidden = true; }
+function showResultsHtml(html) { const el = $('#searchResults'); el.innerHTML = html; el.hidden = false; el.scrollTop = 0; }
+let lastItems = [];
+function renderItems(items, emptyMsg) {
+  lastItems = items;
+  if (!items.length) return showResultsHtml(`<div class="res-empty">${esc(emptyMsg || '검색 결과가 없습니다')}</div>`);
+  const here = S.pos;
+  showResultsHtml(items.map((it, i) => `
+    <button class="res" data-i="${i}">
+      <span class="res-ico">${it.icon || (it.cat === '주소' ? '📍' : '🔎')}</span>
+      <span class="res-body"><div class="res-name">${esc(it.name)}</div><div class="res-addr">${esc([it.cat && it.cat !== '주소' ? it.cat : '', it.addr].filter(Boolean).join(' · '))}</div></span>
+      ${here ? `<span class="res-dist">${fmtDist(hav(here, it))}</span>` : ''}
+    </button>`).join(''));
+}
+function renderRecent() {
+  const r = Places.recents().map(x => ({ ...x, icon: '🕘' }));
+  renderItems(r, '최근 목적지가 없습니다. 장소나 주소를 검색하세요.');
+}
+
+async function doSearch(q) {
+  q = q.trim();
+  if (!q) return renderRecent();
+  const seq = ++searchSeq;
+  showResultsHtml('<div class="res-empty">검색 중…</div>');
+  let items = [];
+  if (CFG.proxyUrl) {
+    try {
+      const p = S.pos ? `&coords=${S.pos.lng},${S.pos.lat}` : '';
+      const j = await fetchJSON(`${CFG.proxyUrl.replace(/\/+$/, '')}/search?query=${encodeURIComponent(q)}${p}`);
+      items = j.items || [];
+    } catch (e) { console.warn('proxy search', e); }
+  }
+  if (!items.length) {
+    const [a, b] = await Promise.allSettled([searchNaverGeocode(q), searchNominatim(q)]);
+    items = [...(a.value || []), ...(b.value || [])];
+  }
+  if (seq !== searchSeq) return;
+  // 중복 제거 + 가까운 순 정렬
+  const seen = [];
+  items = items.filter(it => {
+    if (!isFinite(it.lat) || !isFinite(it.lng) || !it.lat) return false;
+    if (seen.some(s => hav(s, it) < 25 && s.name === it.name)) return false;
+    seen.push(it); return true;
+  });
+  if (S.pos) items.sort((x, y) => hav(S.pos, x) - hav(S.pos, y));
+  renderItems(items.slice(0, 15));
+}
+function searchNaverGeocode(q) {
+  return new Promise(res => {
+    if (MV?.kind !== 'naver' || !naver.maps.Service) return res([]);
+    naver.maps.Service.geocode({ query: q }, (status, response) => {
+      if (status !== naver.maps.Service.Status.OK) return res([]);
+      res((response.v2?.addresses || []).map(a => ({ name: a.roadAddress || a.jibunAddress, addr: a.jibunAddress || '', cat: '주소', lat: +a.y, lng: +a.x })));
+    });
+  });
+}
+async function searchNominatim(q) {
+  const p = S.pos || (MV && MV.center());
+  const vb = p ? `&viewbox=${p.lng - .6},${p.lat + .5},${p.lng + .6},${p.lat - .5}` : '';
+  const j = await fetchJSON(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=kr&limit=10&accept-language=ko&q=${encodeURIComponent(q)}${vb}`);
+  return (j || []).map(r => {
+    const parts = (r.display_name || '').split(',').map(s => s.trim());
+    return { name: r.name || parts[0], addr: parts.slice(1, 5).reverse().join(' '), cat: '', lat: +r.lat, lng: +r.lon };
+  });
+}
+
+/* ════════════ 7. 길찾기 ════════════ */
+const ROUTE_OPTS = [['trafast', '빠른길'], ['tracomfort', '편한길'], ['traoptimal', '최적'], ['traavoidtoll', '무료우선']];
+
+async function getRoute(from, to, option) {
+  if (CFG.proxyUrl) {
+    try { return await routeNaver(from, to, option); }
+    catch (e) { console.warn(e); toast('네이버 길찾기 실패(' + e.message + ') → 대체 경로를 사용합니다.', 4500); }
+  }
+  return routeOSRM(from, to);
+}
+async function routeNaver(from, to, option) {
+  const u = `${CFG.proxyUrl.replace(/\/+$/, '')}/route?start=${from.lng},${from.lat}&goal=${to.lng},${to.lat}&option=${option}`;
+  const j = await fetchJSON(u, {}, 15000);
+  if (j.code !== 0) throw new Error(j.message || j.error?.message || ('code ' + j.code));
+  const r = j.route[option][0];
+  const path = r.path.map(([lng, lat]) => ({ lat, lng }));
+  const guides = (r.guide || []).map(g => ({ idx: g.pointIndex, text: g.instructions, kind: kindFromNaver(g.type, g.instructions) }));
+  return { source: 'naver', path, guides, distance: r.summary.distance, duration: r.summary.duration / 1000, toll: r.summary.tollFare || 0, fuel: r.summary.fuelPrice || 0 };
+}
+function kindFromNaver(type, text) {
+  const t = text || '';
+  if (type === 88 || /목적지/.test(t)) return 'dest';
+  if (type === 87 || /경유지/.test(t)) return 'waypoint';
+  if (type === 6 || /U턴|유턴/.test(t)) return 'uturn';
+  if (/회전교차로|로터리/.test(t)) return 'roundabout';
+  if (type === 2 || /좌회전/.test(t)) return 'left';
+  if (type === 3 || /우회전/.test(t)) return 'right';
+  if (/왼쪽/.test(t)) return 'slight-left';
+  if (/오른쪽/.test(t)) return 'slight-right';
+  return 'straight';
+}
+async function routeOSRM(from, to) {
+  const u = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson&steps=true`;
+  const j = await fetchJSON(u, {}, 15000);
+  if (j.code !== 'Ok' || !j.routes?.length) throw new Error('경로를 찾을 수 없습니다');
+  return parseOSRM(j.routes[0]);
+}
+function parseOSRM(rt) {
+  const path = rt.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  const guides = []; let from = 0;
+  for (const leg of rt.legs) for (const st of leg.steps) {
+    const m = st.maneuver; if (m.type === 'depart') continue;
+    const text = osrmText(st); if (!text) continue;
+    const idx = nearestIdx(path, { lat: m.location[1], lng: m.location[0] }, from); from = idx;
+    guides.push({ idx, text, kind: osrmKind(m) });
+  }
+  return { source: 'osrm', path, guides, distance: rt.distance, duration: rt.duration, toll: 0 };
+}
+function nearestIdx(path, p, from) {
+  let best = from, bd = Infinity;
+  for (let i = from; i < path.length; i++) { const d = hav(path[i], p); if (d < bd) { bd = d; best = i; if (d < 1) break; } }
+  return best;
+}
+function osrmKind(m) {
+  if (m.type === 'arrive') return 'dest';
+  if (/roundabout|rotary/.test(m.type)) return 'roundabout';
+  const mod = m.modifier || 'straight';
+  if (mod === 'uturn') return 'uturn';
+  if (mod === 'slight left') return 'slight-left';
+  if (mod === 'slight right') return 'slight-right';
+  if (/left/.test(mod)) return 'left';
+  if (/right/.test(mod)) return 'right';
+  return 'straight';
+}
+function osrmText(st) {
+  const m = st.maneuver, name = st.name || st.ref || '';
+  const DIR = { 'left': '좌회전', 'right': '우회전', 'sharp left': '급좌회전', 'sharp right': '급우회전', 'slight left': '왼쪽 방향', 'slight right': '오른쪽 방향', 'straight': '직진', 'uturn': 'U턴' };
+  const dir = DIR[m.modifier] || '직진';
+  const to = name ? `${name} 방면 ` : '';
+  switch (m.type) {
+    case 'arrive': return '목적지 도착';
+    case 'roundabout': case 'rotary': return `회전교차로에서 ${m.exit || 1}번째 출구로 ${to}`.trim();
+    case 'roundabout turn': return `회전교차로에서 ${dir}`;
+    case 'exit roundabout': case 'exit rotary': case 'notification': return null;
+    case 'merge': return `${to}합류`;
+    case 'on ramp': return `${to}진입${dir !== '직진' ? ' (' + dir + ')' : ''}`;
+    case 'off ramp': return `${to}출구로 나가기`;
+    case 'fork': return `갈림길에서 ${/left/.test(m.modifier || '') ? '왼쪽' : '오른쪽'} 방향 ${to}`.trim();
+    case 'new name': case 'continue': if (!m.modifier || m.modifier === 'straight') return null; return `${to}${dir}`;
+    default: return `${to}${dir}`;
+  }
+}
+function prepareRoute(r) {
+  const P = r.path, cum = new Float64Array(P.length);
+  for (let i = 1; i < P.length; i++) cum[i] = cum[i - 1] + hav(P[i - 1], P[i]);
+  const total = cum[P.length - 1] || 0;
+  let guides = r.guides.filter(g => g.idx >= 0 && g.idx < P.length).map(g => ({ ...g, d: cum[g.idx] }));
+  guides.sort((a, b) => a.d - b.d);
+  guides = guides.filter((g, i) => !(i > 0 && g.idx === guides[i - 1].idx));
+  if (!guides.length || guides[guides.length - 1].kind !== 'dest') guides.push({ idx: P.length - 1, d: total, text: '목적지', kind: 'dest' });
+  return { ...r, cum, total, guides };
+}
+function scanSeg(R, p, lo, hi) {
+  const P = R.path, kx = 111320 * Math.cos(p.lat * DEG), ky = 110540;
+  let best = { d: Infinity };
+  for (let i = lo; i <= hi; i++) {
+    const a = P[i], b = P[i + 1];
+    const ax = (a.lng - p.lng) * kx, ay = (a.lat - p.lat) * ky, bx = (b.lng - p.lng) * kx, by = (b.lat - p.lat) * ky;
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    const t = L2 ? clamp(-(ax * dx + ay * dy) / L2, 0, 1) : 0;
+    const d = Math.hypot(ax + t * dx, ay + t * dy);
+    if (d < best.d) best = { d, i, t, s: R.cum[i] + t * (R.cum[i + 1] - R.cum[i]), point: { lat: a.lat + t * (b.lat - a.lat), lng: a.lng + t * (b.lng - a.lng) }, bearing: bearing(a, b) };
+  }
+  return best;
+}
+function snapToRoute(R, p, hint) {
+  const n = R.path.length;
+  if (n < 2) return { d: hav(p, R.path[0]), i: 0, t: 0, s: 0, point: R.path[0], bearing: 0 };
+  let best = scanSeg(R, p, Math.max(0, hint - 10), Math.min(n - 2, hint + 200));
+  if (best.d > 60) { const full = scanSeg(R, p, 0, n - 2); if (full.d < best.d) best = full; }
+  return best;
+}
+function pointAt(R, s) {
+  const P = R.path, cum = R.cum;
+  if (s <= 0) return { ...P[0], bearing: bearing(P[0], P[1] || P[0]) };
+  if (s >= R.total) { const n = P.length; return { ...P[n - 1], bearing: bearing(P[n - 2] || P[n - 1], P[n - 1]) }; }
+  let lo = 0, hi = P.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+  const seg = cum[hi] - cum[lo], t = seg ? (s - cum[lo]) / seg : 0, a = P[lo], b = P[hi];
+  return { lat: a.lat + t * (b.lat - a.lat), lng: a.lng + t * (b.lng - a.lng), bearing: bearing(a, b) };
+}
+const nextGuide = (R, s) => R.guides.find(g => g.d > s + 3);
+
+/* ── 목적지 선택 → 경로 미리보기 ── */
+async function selectDest(it) {
+  hideResults(); $('#searchInput').blur();
+  const from = S.pos || (MV && MV.center()) || DEFAULT_CENTER;
+  if (!S.pos) toast('현재 위치를 몰라서 지도 중심에서 출발하는 경로를 보여줍니다.');
+  S.preview = { dest: it, from, route: null };
+  $('#searchBox').hidden = true; $('#routeCard').hidden = false;
+  $('#rcName').textContent = it.name; $('#rcAddr').textContent = it.addr || '';
+  MV?.setDest(it);
+  await loadPreviewRoute();
+}
+async function loadPreviewRoute() {
+  const P = S.preview; if (!P) return;
+  $('#rcTime').textContent = '경로 탐색 중…'; $('#rcDist').textContent = ''; $('#rcMeta').textContent = '';
+  $('#rcStart').disabled = $('#rcSim').disabled = true;
+  renderRouteOpts();
+  try {
+    const r = prepareRoute(await getRoute(P.from, P.dest, CFG.routeOption));
+    if (S.preview !== P) return;
+    P.route = r;
+    MV.setRoute(r.path);
+    S.follow = false;
+    const card = $('.overlay-tl').getBoundingClientRect();
+    MV.fit(r.path, { top: 60, right: 90, bottom: 60, left: Math.min(card.width + 40, $('#map').clientWidth * .55) });
+    const eta = new Date(Date.now() + r.duration * 1000);
+    $('#rcTime').textContent = fmtDur(r.duration);
+    $('#rcDist').textContent = `${fmtDist(r.distance)} · ${fmtClock(eta)} 도착`;
+    $('#rcMeta').innerHTML = [
+      r.source === 'naver' ? '네이버 실시간 교통 반영' : 'OSM 경로 · 교통 정보 미반영',
+      r.toll ? `통행료 ${r.toll.toLocaleString()}원` : '',
+      r.fuel ? `유류비 약 ${r.fuel.toLocaleString()}원` : ''
+    ].filter(Boolean).map(esc).join(' · ');
+    $('#rcStart').disabled = $('#rcSim').disabled = false;
+  } catch (e) {
+    $('#rcTime').textContent = '경로를 찾지 못했어요';
+    $('#rcMeta').textContent = e.message || '';
+  }
+}
+function renderRouteOpts() {
+  const el = $('#rcOpts');
+  if (!CFG.proxyUrl) { el.innerHTML = ''; return; }
+  el.innerHTML = ROUTE_OPTS.map(([k, v]) => `<button class="chip ${k === CFG.routeOption ? 'on' : ''}" data-opt="${k}">${v}</button>`).join('');
+}
+function closePreview() {
+  S.preview = null; MV?.clearRoute(); MV?.setDest(null);
+  $('#routeCard').hidden = true; $('#searchBox').hidden = false;
+  setFollow(true);
+}
+
+/* ── 안내 ── */
+function startNav(sim) {
+  const P = S.preview; if (!P?.route) return;
+  Places.addRecent(P.dest);
+  S.nav = { route: P.route, dest: P.dest, lastIdx: 0, s: 0, off: 0, announced: {}, rerouting: false, lastReroute: 0, progIdx: -1 };
+  S.preview = null;
+  $('#routeCard').hidden = true; $('#turnWrap').hidden = false; $('#navBar').hidden = false;
+  $('#navPanel').classList.add('navigating');
+  unlockSpeech();
+  const R = S.nav.route;
+  speak(`경로 안내를 시작합니다. 목적지까지 ${spokenDist(R.distance)}, 약 ${fmtDur(R.duration)} 걸립니다.`);
+  keepAwake();
+  if (sim) startSim(); else if (S.pos) handlePosition(S.pos);
+  setFollow(true);
+  updateBannerIdle();
+}
+function stopNav(arrived) {
+  stopSim();
+  S.nav = null;
+  MV?.clearRoute(); MV?.setDest(null);
+  $('#turnWrap').hidden = true; $('#navBar').hidden = true; $('#searchBox').hidden = false;
+  $('#navPanel').classList.remove('navigating');
+  if (!arrived && 'speechSynthesis' in window) speechSynthesis.cancel();
+  S.speed = Math.max(0, S.realPos?.speed || 0); $('#speedVal').textContent = Math.round(S.speed * 3.6);
+  if (S.realPos) { S.pos = S.realPos; MV?.setMe(S.pos, S.heading); }
+  setFollow(true);
+}
+function updateBannerIdle() {
+  const R = S.nav.route, g = R.guides[0];
+  setBanner(g, g.d);
+}
+function setBanner(g, dist, g2) {
+  $('#turnIcon').innerHTML = TURN_ICONS[g.kind] || TURN_ICONS.straight;
+  $('#turnDist').textContent = g.kind === 'dest' && dist < 30 ? '도착' : fmtDist(dist);
+  $('#turnText').textContent = g.text;
+  const n = $('#turnNext');
+  if (g2) { n.hidden = false; n.innerHTML = `그 다음 ${TURN_ICONS[g2.kind] || ''} <span>${esc(g2.text)}</span>`; }
+  else n.hidden = true;
+}
+
+function navUpdate(fix) {
+  const N = S.nav, R = N.route;
+  const snap = snapToRoute(R, fix, N.lastIdx);
+  // 경로 이탈 감지 → 재탐색
+  if (!S.sim) {
+    if (snap.d > 45 && (fix.acc || 0) < 60) N.off++; else N.off = 0;
+    if (N.off >= 3 && !N.rerouting && Date.now() - N.lastReroute > 12000) { reroute(fix); return snap; }
+  }
+  if (snap.d < 60) { N.lastIdx = snap.i; N.s = snap.s; }
+  const s = N.s;
+  if (MV && snap.d < 60 && snap.i !== N.progIdx) { N.progIdx = snap.i; MV.setProgress(snap.i, snap.point); }
+
+  const rem = Math.max(0, R.total - s);
+  const remSec = R.total ? R.duration * rem / R.total : 0;
+  $('#remainDist').textContent = fmtDist(rem);
+  $('#remainTime').textContent = fmtDur(remSec);
+  $('#etaTime').textContent = fmtClock(new Date(Date.now() + remSec * 1000));
+
+  if (rem < 25) { arrive(); return snap; }
+  const g = nextGuide(R, s);
+  if (!g) { arrive(); return snap; }
+  const dist = g.d - s;
+  const gi = R.guides.indexOf(g), g2 = R.guides[gi + 1];
+  setBanner(g, dist, g2 && g2.d - g.d < 300 ? g2 : null);
+  announce(g, dist, g2);
+  return snap;
+}
+function announce(g, dist, g2) {
+  let a = S.nav.announced[g.idx];
+  if (!a) { // 안내 지점이 바뀔 때 한 번만 속도로 기준 거리를 정함 (속도 변화로 같은 안내가 반복되지 않게)
+    const kmh = S.speed * 3.6;
+    a = S.nav.announced[g.idx] = {
+      far: kmh > 80 ? 1500 : kmh > 50 ? 700 : 400,
+      near: kmh > 80 ? 500 : kmh > 40 ? 250 : 120,
+      now: kmh > 60 ? 90 : 45
+    };
+  }
+  const then = g2 && g2.d - g.d < 150 ? ` 이어서 ${g2.text}입니다.` : '';
+  const ahead = d => g.kind === 'dest' ? `${spokenDist(d)} 앞에 목적지가 있습니다.` : `${spokenDist(d)} 앞에서 ${g.text}입니다.`;
+  if (dist <= a.now) {
+    if (!a.saidNow) { a.saidNow = a.saidNear = a.saidFar = true; speak(g.kind === 'dest' ? '잠시 후 목적지에 도착합니다.' : `${g.text}.${then}`); }
+  } else if (dist <= a.near) {
+    if (!a.saidNear) { a.saidNear = a.saidFar = true; speak(ahead(dist) + then); }
+  } else if (dist <= a.far && dist > a.near * 1.6) {
+    if (!a.saidFar) { a.saidFar = true; speak(ahead(dist)); }
+  }
+}
+function arrive() {
+  speak('목적지에 도착했습니다. 안내를 종료합니다.');
+  toast('🏁 목적지에 도착했습니다');
+  stopNav(true);
+}
+async function reroute(fix) {
+  const N = S.nav; N.rerouting = true; N.lastReroute = Date.now();
+  $('#turnIcon').innerHTML = ''; $('#turnDist').textContent = '재탐색'; $('#turnText').textContent = '새 경로를 찾고 있어요…'; $('#turnNext').hidden = true;
+  speak('경로를 재탐색합니다.');
+  try {
+    const r = prepareRoute(await getRoute(fix, N.dest, CFG.routeOption));
+    if (S.nav !== N) return;
+    Object.assign(N, { route: r, lastIdx: 0, s: 0, off: 0, announced: {}, progIdx: -1 });
+    MV?.setRoute(r.path);
+  } catch (e) { toast('재탐색 실패: ' + e.message); }
+  finally { N.rerouting = false; }
+}
+
+/* ── 모의주행 ── */
+function startSim() {
+  stopSim();
+  S.sim = { s: 0, mult: 1, timer: setInterval(simTick, 500) };
+  document.querySelectorAll('#simBadge button').forEach(b => b.classList.toggle('on', b.dataset.mult === '1'));
+  $('#simBadge').hidden = false;
+  simTick();
+}
+function stopSim() {
+  if (S.sim) clearInterval(S.sim.timer);
+  S.sim = null; $('#simBadge').hidden = true;
+}
+function simTick() {
+  const N = S.nav; if (!N) return stopSim();
+  const R = N.route;
+  let v = clamp(R.total / Math.max(1, R.duration), 9, 25); // 경로 평균 속도 (m/s)
+  const g = nextGuide(R, S.sim.s);
+  if (g && g.kind !== 'straight' && g.d - S.sim.s < 70) v = Math.min(v, 7);
+  v *= S.sim.mult;
+  S.sim.s = Math.min(S.sim.s + v * 0.5, R.total);
+  const p = pointAt(R, S.sim.s);
+  handlePosition({ lat: p.lat, lng: p.lng, acc: 5, speed: v, heading: p.bearing, t: Date.now() });
+}
+
+/* ── 음성 ── */
+let koVoice = null;
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  koVoice = vs.find(v => /^ko/i.test(v.lang) && /Yuna|Google|Heami|SunHi|Siri|유나/i.test(v.name)) || vs.find(v => /^ko/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text) {
+  if (!CFG.voice || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR'; if (koVoice) u.voice = koVoice; u.rate = 1.05;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function unlockSpeech() { // iOS는 사용자 터치 안에서 한 번 말해야 이후 음성이 나옵니다
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u);
+}
+function renderVoiceBtn() { $('#btnVoice').textContent = CFG.voice ? '🔊' : '🔇'; }
+
+/* ── 화면 꺼짐 방지 ── */
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); spStartPolling(); } else spStopPolling(); });
+document.addEventListener('pointerdown', keepAwake);
+
+/* ════════════ 8. 시계 ════════════ */
+function tickClock() {
+  const d = new Date(), h = d.getHours(), mm = String(d.getMinutes()).padStart(2, '0');
+  if (CFG.clock24) { $('#clockAmPm').textContent = ''; $('#clockTime').textContent = `${String(h).padStart(2, '0')}:${mm}`; }
+  else { $('#clockAmPm').textContent = h < 12 ? '오전' : '오후'; $('#clockTime').textContent = `${h % 12 || 12}:${mm}`; }
+  $('#clockDate').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`;
+}
+
+/* ════════════ 9. 날씨 (Open-Meteo, 키 불필요) ════════════ */
+const WMO = {
+  0: ['☀️', '맑음'], 1: ['🌤️', '대체로 맑음'], 2: ['⛅', '구름 조금'], 3: ['☁️', '흐림'], 45: ['🌫️', '안개'], 48: ['🌫️', '짙은 안개'],
+  51: ['🌦️', '약한 이슬비'], 53: ['🌦️', '이슬비'], 55: ['🌧️', '강한 이슬비'], 56: ['🌧️', '어는 이슬비'], 57: ['🌧️', '어는 이슬비'],
+  61: ['🌧️', '약한 비'], 63: ['🌧️', '비'], 65: ['🌧️', '강한 비'], 66: ['🌧️', '어는 비'], 67: ['🌧️', '어는 비'],
+  71: ['🌨️', '약한 눈'], 73: ['🌨️', '눈'], 75: ['❄️', '많은 눈'], 77: ['🌨️', '싸락눈'],
+  80: ['🌦️', '소나기'], 81: ['🌧️', '소나기'], 82: ['⛈️', '강한 소나기'], 85: ['🌨️', '눈 소나기'], 86: ['🌨️', '강한 눈 소나기'],
+  95: ['⛈️', '뇌우'], 96: ['⛈️', '우박 동반 뇌우'], 99: ['⛈️', '우박 동반 뇌우']
+};
+const W = { last: null, t: 0, busy: false };
+function maybeUpdateWeather(force) {
+  const p = S.realPos || S.pos || LS.get('lastPos');
+  if (!p || W.busy) return;
+  if (!force && W.last && hav(W.last, p) < 5000 && Date.now() - W.t < 10 * 60e3) return;
+  updateWeather(p);
+}
+function pmGrade(v, kind) {
+  const cut = kind === 'pm10' ? [30, 80, 150] : [15, 35, 75];
+  return v <= cut[0] ? ['좋음', '#4ade80'] : v <= cut[1] ? ['보통', '#60a5fa'] : v <= cut[2] ? ['나쁨', '#fb923c'] : ['매우나쁨', '#f87171'];
+}
+async function updateWeather(p) {
+  W.busy = true; W.last = { lat: p.lat, lng: p.lng }; W.t = Date.now();
+  try {
+    const q = `latitude=${p.lat.toFixed(3)}&longitude=${p.lng.toFixed(3)}`;
+    const [wx, aq, place] = await Promise.allSettled([
+      fetchJSON(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`),
+      fetchJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=pm10,pm2_5`),
+      reverseGeocode(p)
+    ]);
+    if (wx.value) {
+      const c = wx.value.current, d = wx.value.daily;
+      let [icon, desc] = WMO[c.weather_code] || ['🌡️', '-'];
+      if (!c.is_day && c.weather_code <= 1) icon = '🌙';
+      $('#wxIcon').textContent = icon;
+      $('#wxTemp').textContent = Math.round(c.temperature_2m) + '°';
+      $('#wxDesc').textContent = desc;
+      const pop = d.precipitation_probability_max?.[0];
+      $('#wxRange').textContent = `최고 ${Math.round(d.temperature_2m_max[0])}° · 최저 ${Math.round(d.temperature_2m_min[0])}°${pop != null && pop >= 30 ? ` · 비 ${pop}%` : ''}`;
+      $('#weatherPanel').classList.toggle('night', !c.is_day);
+    } else $('#wxDesc').textContent = '날씨 정보 없음';
+    if (aq.value?.current) {
+      const c = aq.value.current;
+      const g10 = pmGrade(c.pm10, 'pm10'), g25 = pmGrade(c.pm2_5, 'pm25');
+      const worse = ['좋음', '보통', '나쁨', '매우나쁨'].indexOf(g10[0]) >= ['좋음', '보통', '나쁨', '매우나쁨'].indexOf(g25[0]) ? ['미세먼지', g10] : ['초미세먼지', g25];
+      const el = $('#wxAir'); el.hidden = false;
+      el.innerHTML = `${worse[0]} <b style="color:${worse[1][1]}">${worse[1][0]}</b>`;
+    }
+    if (place.value) $('#wxPlace').textContent = place.value;
+  } catch (e) { console.warn(e); }
+  finally { W.busy = false; }
+}
+function reverseGeocode(p) {
+  if (MV?.kind === 'naver' && naver.maps.Service?.reverseGeocode) {
+    return new Promise(res => {
+      naver.maps.Service.reverseGeocode({ coords: new naver.maps.LatLng(p.lat, p.lng), orders: 'admcode' }, (status, r) => {
+        const x = status === naver.maps.Service.Status.OK && r.v2?.results?.[0]?.region;
+        res(x ? [x.area2?.name, x.area3?.name].filter(Boolean).join(' ') : null);
+      });
+    });
+  }
+  return fetchJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=ko&lat=${p.lat}&lon=${p.lng}`)
+    .then(j => { const a = j.address || {}; return [a.city_district || a.borough || a.county || a.city, a.suburb || a.quarter || a.town || a.village].filter(Boolean).join(' ') || null; });
+}
+
+/* ════════════ 10. Spotify (휴대폰 앱을 원격 조작) ════════════ */
+const SP = { token: LS.get('sp.token'), state: null, at: 0, polling: null, playlists: [] };
+const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative';
+const redirectUri = () => location.origin + location.pathname;
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 4.8v14.4L19.5 12z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 4h4v16h-4zM13.5 4h4v16h-4z"/></svg>';
+
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function randStr(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; return Array.from(a, x => c[x % c.length]).join(''); }
+
+async function spLogin() {
+  if (!CFG.spotifyClientId) { openSettings(); toast('Spotify Client ID를 먼저 입력하세요.'); return; }
+  if (!window.crypto?.subtle) { toast('Spotify 로그인은 HTTPS 주소에서만 됩니다.'); return; }
+  const verifier = randStr(64), state = randStr(16);
+  LS.set('sp.verifier', verifier); LS.set('sp.state', state);
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
+    response_type: 'code', client_id: CFG.spotifyClientId, scope: SP_SCOPES,
+    code_challenge_method: 'S256', code_challenge: challenge, redirect_uri: redirectUri(), state
+  });
+}
+async function spHandleCallback() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('code') && !q.has('error')) return;
+  history.replaceState(null, '', redirectUri());
+  if (q.get('error')) { toast('Spotify 로그인이 취소됐어요.'); return; }
+  if (q.get('state') !== LS.get('sp.state')) { toast('Spotify 로그인 확인에 실패했어요. 다시 시도해 주세요.'); return; }
+  try {
+    await spTokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), client_id: CFG.spotifyClientId, code_verifier: LS.get('sp.verifier', '') });
+    toast('Spotify 연결 완료 🎵');
+  } catch (e) { toast('Spotify 로그인 실패: ' + e.message, 6000); }
+}
+async function spTokenRequest(params) {
+  const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(params) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error_description || j.error || 'token error'); e.fatal = j.error === 'invalid_grant' || j.error === 'invalid_client'; throw e; }
+  SP.token = { access: j.access_token, refresh: j.refresh_token || SP.token?.refresh, exp: Date.now() + (j.expires_in - 60) * 1000 };
+  LS.set('sp.token', SP.token);
+}
+let refreshing = null;
+function spRefresh() {
+  if (!SP.token?.refresh) return Promise.reject(Object.assign(new Error('로그인 필요'), { fatal: true }));
+  refreshing ||= spTokenRequest({ grant_type: 'refresh_token', refresh_token: SP.token.refresh, client_id: CFG.spotifyClientId }).finally(() => { refreshing = null; });
+  return refreshing;
+}
+async function spApi(path, { method = 'GET', body } = {}, retry = true) {
+  if (!SP.token) throw Object.assign(new Error('로그인 필요'), { fatal: true });
+  if (Date.now() > SP.token.exp) await spRefresh();
+  const r = await fetch('https://api.spotify.com/v1' + path, {
+    method, headers: { Authorization: 'Bearer ' + SP.token.access, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 401 && retry) { await spRefresh(); return spApi(path, { method, body }, false); }
+  if (r.status === 204 || r.status === 202) return null;
+  const txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch {}
+  if (!r.ok) throw Object.assign(new Error(j?.error?.message || 'HTTP ' + r.status), { status: r.status, reason: j?.error?.reason });
+  return j;
+}
+function spLogout() {
+  LS.del('sp.token'); SP.token = null; SP.state = null; spStopPolling(); spShow();
+}
+function spFatal(e) {
+  if (e.fatal) { spLogout(); $('#spConnectMsg').textContent = 'Spotify 로그인이 만료됐어요. 다시 연결해 주세요.'; return true; }
+  return false;
+}
+function spShow() {
+  const on = !!SP.token;
+  $('#spConnect').hidden = on; $('#spMain').hidden = !on;
+  if (!on) $('#spBg').style.backgroundImage = '';
+  if (!CFG.spotifyClientId && !on) $('#spConnectMsg').textContent = '⚙ 설정에서 Spotify Client ID를 입력한 뒤 연결하세요.';
+}
+async function spPoll() {
+  if (!SP.token) return;
+  try { SP.state = await spApi('/me/player?additional_types=episode'); SP.at = Date.now(); spRender(); }
+  catch (e) { if (!spFatal(e)) console.warn('spotify poll', e); }
+}
+function spStartPolling() { if (!SP.token || SP.polling) return; spPoll(); SP.polling = setInterval(spPoll, 4000); }
+function spStopPolling() { clearInterval(SP.polling); SP.polling = null; }
+
+function spRender() {
+  const st = SP.state, it = st?.item;
+  $('#spPlay').innerHTML = st?.is_playing ? ICON_PAUSE : ICON_PLAY;
+  $('#spShuffle').className = 'sp-btn small ' + (st?.shuffle_state ? 'on' : 'off');
+  const rep = st?.repeat_state || 'off';
+  $('#spRepeat').className = 'sp-btn small ' + (rep !== 'off' ? 'on' : 'off');
+  $('#spRepeat .one').hidden = rep !== 'track';
+  if (!it) {
+    $('#spTitle').textContent = '재생 중인 음악 없음';
+    $('#spArtist').textContent = '아래 플레이리스트를 눌러 재생하세요';
+    $('#spDevice').textContent = st?.device ? '🔈 ' + st.device.name : '';
+    $('#spArt').removeAttribute('src'); $('#spArt').dataset.src = '';
+    $('#spBg').style.backgroundImage = '';
+    $('#spCur').textContent = $('#spDur').textContent = '0:00'; $('#spBar').style.width = '0';
+    return;
+  }
+  const img = (it.album?.images || it.images || it.show?.images || [])[0]?.url || '';
+  if ($('#spArt').dataset.src !== img) {
+    $('#spArt').dataset.src = img;
+    if (img) { $('#spArt').src = img; $('#spBg').style.backgroundImage = `url("${img}")`; }
+    else { $('#spArt').removeAttribute('src'); $('#spBg').style.backgroundImage = ''; }
+  }
+  $('#spTitle').textContent = it.name;
+  $('#spArtist').textContent = it.artists ? it.artists.map(a => a.name).join(', ') : (it.show?.name || '');
+  $('#spDevice').textContent = st.device ? '🔈 ' + st.device.name : '';
+  const ctx = st.context?.uri;
+  document.querySelectorAll('.pl').forEach(el => el.classList.toggle('playing', el.dataset.uri === ctx));
+  spTickProgress();
+}
+function spTickProgress() {
+  const st = SP.state, it = st?.item; if (!it) return;
+  const dur = it.duration_ms || 0;
+  const pos = Math.min(dur, (st.progress_ms || 0) + (st.is_playing ? Date.now() - SP.at : 0));
+  $('#spCur').textContent = fmtMs(pos); $('#spDur').textContent = fmtMs(dur);
+  $('#spBar').style.width = dur ? (pos / dur * 100) + '%' : '0';
+}
+async function spEnsureDevice() {
+  const j = await spApi('/me/player/devices');
+  const devs = j?.devices || [];
+  if (!devs.length) { toast('재생할 기기가 없어요. 휴대폰에서 Spotify 앱을 한 번 열어주세요.', 5000); return null; }
+  const d = devs.find(x => x.is_active) || devs.find(x => x.type === 'Smartphone') || devs[0];
+  if (!d.is_active) { await spApi('/me/player', { method: 'PUT', body: { device_ids: [d.id], play: false } }); await sleep(700); }
+  return d.id;
+}
+async function spCmd(fn) {
+  try { await fn(''); }
+  catch (e) {
+    if (spFatal(e)) return;
+    if (e.status === 404 || e.reason === 'NO_ACTIVE_DEVICE') {
+      try { const id = await spEnsureDevice(); if (id) await fn('device_id=' + id); }
+      catch (e2) { toast('Spotify: ' + e2.message); }
+    } else if (e.status === 403) toast('Spotify Premium 계정에서만 조작할 수 있어요.', 4500);
+    else toast('Spotify: ' + e.message);
+  }
+  setTimeout(spPoll, 400); setTimeout(spPoll, 1500);
+}
+const qs = (base, extra) => base + (extra ? (base.includes('?') ? '&' : '?') + extra : '');
+function spTogglePlay() {
+  const playing = SP.state?.is_playing;
+  if (SP.state) { SP.state.progress_ms = (SP.state.progress_ms || 0) + (playing ? Date.now() - SP.at : 0); SP.at = Date.now(); SP.state.is_playing = !playing; spRender(); }
+  spCmd(d => spApi(qs(playing ? '/me/player/pause' : '/me/player/play', d), { method: 'PUT' }));
+}
+async function spLoadPlaylists() {
+  const el = $('#spList');
+  el.innerHTML = '<div class="res-empty">불러오는 중…</div>';
+  try {
+    const j = await spApi('/me/playlists?limit=50');
+    SP.playlists = j?.items?.filter(Boolean) || [];
+    if (!SP.playlists.length) { el.innerHTML = '<div class="res-empty">플레이리스트가 없습니다</div>'; return; }
+    el.innerHTML = SP.playlists.map((p, i) => {
+      const img = p.images?.[p.images.length > 1 ? 1 : 0]?.url || p.images?.[0]?.url;
+      const n = p.items?.total ?? p.tracks?.total;
+      return `<button class="pl" data-i="${i}" data-uri="${esc(p.uri)}">
+        ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="pl-ph"></span>'}
+        <span class="pl-body"><div class="pl-name">${esc(p.name)}</div><div class="pl-sub">${n != null ? n + '곡 · ' : ''}${esc(p.owner?.display_name || '')}</div></span>
+      </button>`;
+    }).join('');
+    spRender();
+  } catch (e) { if (!spFatal(e)) el.innerHTML = `<div class="res-empty">불러오기 실패: ${esc(e.message)}</div>`; }
+}
+async function spInit() {
+  await spHandleCallback();
+  spShow();
+  if (SP.token) { spStartPolling(); spLoadPlaylists(); }
+}
+
+/* ════════════ 10-2. 네이버 지도 앱 연동 (nmap:// URL Scheme, 키 불필요) ════════════ */
+function nmapUrl(action, params = {}) {
+  const all = { ...params, appname: location.origin && location.origin !== 'null' ? location.origin : 'mycarplay' };
+  const q = Object.entries(all).filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&'); // 공백을 +가 아닌 %20으로
+  return `nmap://${action}?${q}`;
+}
+function openNmap(action, params) { location.href = nmapUrl(action, params); }
+function navigateTo(p) { openNmap('navigation', { dlat: p.lat.toFixed(7), dlng: p.lng.toFixed(7), dname: p.name }); }
+
+const Favs = {
+  list() { return LS.get('favs', []); },
+  save(list) { LS.set('favs', list); renderLaunch(); renderFavList(); },
+  slots() { // 집, 회사, 즐겨찾기 순서
+    return [
+      { key: 'home', emoji: '🏠', label: '집', p: Places.get('home') },
+      { key: 'work', emoji: '🏢', label: '회사', p: Places.get('work') },
+      ...this.list().map((p, i) => ({ key: 'fav:' + i, emoji: '⭐', label: p.name, p }))
+    ];
+  }
+};
+const LAUNCH_SEARCHES = [['⛽', '주유소'], ['🔌', '전기차 충전소'], ['🅿️', '주차장'], ['☕', '카페'], ['🚻', '화장실']];
+function renderLaunch() {
+  const g = $('#lpGrid'); if (!g) return;
+  const favBtns = Favs.slots().map(s => s.p
+    ? `<button class="lp-btn" data-act="go" data-key="${s.key}"><span class="e">${s.emoji}</span>${esc(s.label)}<small>${esc(s.p.addr || s.p.name || '')}</small></button>`
+    : `<button class="lp-btn unset" data-act="edit"><span class="e">${s.emoji}</span>${esc(s.label)}<small>눌러서 설정</small></button>`).join('');
+  g.innerHTML =
+    `<button class="lp-btn main" data-act="drive"><span class="e">🧭</span>내비 켜기<small>안전운전 모드</small></button>` +
+    favBtns +
+    LAUNCH_SEARCHES.map(([e, q]) => `<button class="lp-btn" data-act="search" data-q="${esc(q)}"><span class="e">${e}</span>${esc(q.replace('전기차 ', ''))}<small>주변 검색</small></button>`).join('') +
+    `<button class="lp-btn" data-act="edit"><span class="e">✏️</span>편집<small>목적지 버튼</small></button>`;
+}
+function onLaunchClick(e) {
+  const b = e.target.closest('.lp-btn'); if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'drive') openNmap('navigation');
+  else if (act === 'search') openNmap('search', { query: b.dataset.q });
+  else if (act === 'edit') openFavs();
+  else if (act === 'go') { const s = Favs.slots().find(x => x.key === b.dataset.key); if (s?.p) navigateTo({ ...s.p, name: s.p.name || s.label }); }
+}
+
+let favCandidates = [];
+function openFavs() { renderFavList(); $('#favResults').innerHTML = ''; $('#favModal').hidden = false; }
+function renderFavList() {
+  const el = $('#favList'); if (!el) return;
+  const rows = Favs.slots().filter(s => s.p);
+  el.innerHTML = rows.length ? rows.map(s => `
+    <div class="fav-row"><span style="font-size:22px">${s.emoji}</span>
+      <div class="n"><b>${esc(s.label)}</b><span>${esc(s.p.addr || `${s.p.lat.toFixed(5)}, ${s.p.lng.toFixed(5)}`)}</span></div>
+      <button class="btn small" data-del="${s.key}">삭제</button></div>`).join('')
+    : '<div class="res-empty">아직 저장된 목적지가 없어요.</div>';
+}
+function favStore(p) {
+  const slot = $('#favSlot').value;
+  const name = $('#favName').value.trim() || (slot === 'home' ? '집' : slot === 'work' ? '회사' : p.name);
+  const item = { name, addr: p.addr || '', lat: p.lat, lng: p.lng };
+  if (slot === 'fav') Favs.save([...Favs.list(), item]);
+  else { Places.set(slot, item); renderLaunch(); renderFavList(); }
+  $('#favName').value = ''; $('#favQuery').value = ''; $('#favResults').innerHTML = '';
+  toast(`'${name}' 버튼을 저장했어요`);
+}
+async function favSearch() {
+  const q = $('#favQuery').value.trim(); if (!q) return;
+  const m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (m) { // 좌표 직접 입력 (위도,경도 순서가 아니어도 한국 범위로 판별)
+    let a = +m[1], b = +m[2]; if (a > 90) [a, b] = [b, a];
+    return favStore({ name: '목적지', lat: a, lng: b, addr: `${a.toFixed(5)}, ${b.toFixed(5)}` });
+  }
+  $('#favResults').innerHTML = '<div class="res-empty">검색 중…</div>';
+  try {
+    favCandidates = await searchNominatim(q);
+    $('#favResults').innerHTML = favCandidates.length ? favCandidates.map((it, i) => `
+      <button class="res" data-i="${i}"><span class="res-ico">📍</span>
+        <span class="res-body"><div class="res-name">${esc(it.name)}</div><div class="res-addr">${esc(it.addr)}</div></span></button>`).join('')
+      : '<div class="res-empty">결과가 없어요. 주소를 더 자세히 쓰거나 좌표를 붙여넣어 보세요.</div>';
+  } catch (e) { $('#favResults').innerHTML = `<div class="res-empty">검색 실패: ${esc(e.message)}</div>`; }
+}
+function favHere() {
+  if (!('geolocation' in navigator)) return toast('위치 기능을 쓸 수 없어요.');
+  toast('현재 위치 확인 중…');
+  navigator.geolocation.getCurrentPosition(
+    p => favStore({ name: '현재 위치', lat: p.coords.latitude, lng: p.coords.longitude, addr: `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}` }),
+    () => toast('위치를 가져오지 못했어요. 위치 권한을 확인해 주세요.'),
+    { enableHighAccuracy: true, timeout: 15000 });
+}
+function bindLaunch() {
+  $('#lpGrid').addEventListener('click', onLaunchClick);
+  $('#lpSearchForm').addEventListener('submit', e => {
+    e.preventDefault(); const q = $('#lpSearch').value.trim(); if (!q) return;
+    $('#lpSearch').blur(); openNmap('search', { query: q });
+  });
+  $('#lpSettings').onclick = openSettings;
+  $('#favClose').onclick = () => { $('#favModal').hidden = true; };
+  $('#favModal').addEventListener('click', e => { if (e.target.id === 'favModal') $('#favModal').hidden = true; });
+  $('#favSearchBtn').onclick = favSearch;
+  $('#favQuery').addEventListener('keydown', e => { if (e.key === 'Enter') favSearch(); });
+  $('#favHere').onclick = favHere;
+  $('#favResults').addEventListener('click', e => { const b = e.target.closest('.res'); if (b) favStore(favCandidates[+b.dataset.i]); });
+  $('#favList').addEventListener('click', e => {
+    const k = e.target.dataset?.del; if (!k) return;
+    if (k === 'home' || k === 'work') { LS.del(k); renderLaunch(); renderFavList(); renderQuick(); }
+    else { const i = +k.split(':')[1]; Favs.save(Favs.list().filter((_, j) => j !== i)); }
+  });
+}
+// 앱 모드: 날씨용 위치만 10분마다 가볍게 확인
+function geoForWeather() {
+  if (!('geolocation' in navigator)) return;
+  const get = () => navigator.geolocation.getCurrentPosition(p => {
+    S.realPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() };
+    LS.set('lastPos', { lat: S.realPos.lat, lng: S.realPos.lng });
+    maybeUpdateWeather();
+  }, err => { if (err.code === 1 && !S.geoErrShown) { S.geoErrShown = true; toast('날씨를 위해 위치 권한을 허용해 주세요.', 5000); } },
+  { enableHighAccuracy: false, maximumAge: 5 * 60e3, timeout: 20000 });
+  get(); setInterval(get, 10 * 60e3);
+}
+
+/* ════════════ 11. 설정 ════════════ */
+function openSettings() {
+  $('#cfgNavMode').value = CFG.navMode; $('#cfgLite').checked = CFG.lite;
+  $('#cfgNaver').value = CFG.naverKeyId; $('#cfgProxy').value = CFG.proxyUrl; $('#cfgSpotify').value = CFG.spotifyClientId;
+  $('#cfgTheme').value = CFG.theme; $('#cfgVoice').checked = CFG.voice; $('#cfgClock24').checked = CFG.clock24;
+  $('#originHint').textContent = location.origin; $('#redirectHint').textContent = redirectUri();
+  $('#statusBox').innerHTML = CFG.navMode !== 'builtin' ? [
+    `내비게이션: <b>네이버 지도 앱 연동</b>`,
+    `위치(날씨용): <b>${S.realPos ? '확인됨' : '없음'}</b>`,
+    `Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`,
+    location.protocol !== 'https:' && location.hostname !== 'localhost' ? '<span style="color:#fb923c">⚠ HTTPS가 아니라서 위치·Spotify가 동작하지 않을 수 있어요</span>' : ''
+  ].filter(Boolean).join('<br>') : [
+    location.protocol === 'file:' ? '<span style="color:#fb923c">⚠ 지금은 PC 파일(file://)로 열려 있어요. 네이버 지도 키와 Spotify 로그인은 https 주소(예: GitHub Pages)에서만 동작합니다.</span>' : '',
+    `지도: <b>${MV?.kind === 'naver' ? '네이버 지도' : 'OpenStreetMap'}</b>`,
+    `길찾기: <b>${CFG.proxyUrl ? '네이버 Directions (실시간 교통)' : 'OSRM (교통 미반영)'}</b>`,
+    `위치: <b>${S.realPos ? `수신 중 (오차 ±${Math.round(S.realPos.acc)}m)` : '없음'}</b>`,
+    `Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`,
+    location.protocol !== 'https:' && location.hostname !== 'localhost' ? '<span style="color:#fb923c">⚠ HTTPS가 아니라서 위치·Spotify가 동작하지 않을 수 있어요</span>' : ''
+  ].filter(Boolean).join('<br>');
+  $('#settings').hidden = false;
+}
+function saveSettings() {
+  const cfg = {
+    navMode: $('#cfgNavMode').value, lite: $('#cfgLite').checked,
+    naverKeyId: $('#cfgNaver').value.trim(), proxyUrl: $('#cfgProxy').value.trim().replace(/\/+$/, ''), spotifyClientId: $('#cfgSpotify').value.trim(),
+    theme: $('#cfgTheme').value, traffic: CFG.traffic, voice: $('#cfgVoice').checked, clock24: $('#cfgClock24').checked, routeOption: CFG.routeOption
+  };
+  LS.set('config', cfg);
+  location.reload();
+}
+
+/* ════════════ 12. 이벤트 연결 ════════════ */
+function bindUI() {
+  const inp = $('#searchInput');
+  inp.addEventListener('focus', () => { if (!inp.value.trim()) renderRecent(); else if (lastItems.length) renderItems(lastItems); });
+  inp.addEventListener('input', () => {
+    $('#searchClear').hidden = !inp.value;
+    clearTimeout(searchTimer);
+    const v = inp.value.trim();
+    if (!v) { renderRecent(); return; }
+    if (v.length >= 2) searchTimer = setTimeout(() => doSearch(v), 800);
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(inp.value); inp.blur(); } });
+  $('#searchClear').onclick = () => { inp.value = ''; $('#searchClear').hidden = true; lastItems = []; hideResults(); };
+  $('#searchResults').addEventListener('click', e => { const b = e.target.closest('.res'); if (b) selectDest(lastItems[+b.dataset.i]); });
+  $('#quickRow').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) onQuick(b.dataset.q); });
+
+  $('#rcOpts').addEventListener('click', e => {
+    const b = e.target.closest('[data-opt]'); if (!b) return;
+    CFG.routeOption = b.dataset.opt; LS.set('config', { ...LS.get('config', {}), routeOption: CFG.routeOption });
+    loadPreviewRoute();
+  });
+  $('#rcStart').onclick = () => startNav(false);
+  $('#rcSim').onclick = () => startNav(true);
+  $('#rcCancel').onclick = closePreview;
+  $('#rcHome').onclick = () => { if (S.preview) { Places.set('home', S.preview.dest); toast('🏠 집으로 저장했어요'); } };
+  $('#rcWork').onclick = () => { if (S.preview) { Places.set('work', S.preview.dest); toast('🏢 회사로 저장했어요'); } };
+
+  $('#btnStop').onclick = () => { stopNav(false); toast('안내를 종료했습니다'); };
+  $('#btnVoice').onclick = () => {
+    CFG.voice = !CFG.voice; LS.set('config', { ...LS.get('config', {}), voice: CFG.voice }); renderVoiceBtn();
+    if (CFG.voice) { unlockSpeech(); speak('음성 안내를 켭니다.'); } else window.speechSynthesis?.cancel();
+  };
+  $('#btnOverview').onclick = () => {
+    if (!S.nav) return;
+    onUserMapMove();
+    const R = S.nav.route, rest = R.path.slice(S.nav.lastIdx);
+    MV.fit(rest.length > 1 ? rest : R.path, { top: 200, right: 90, bottom: 110, left: 60 });
+  };
+  $('#simBadge').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !S.sim) return;
+    S.sim.mult = +b.dataset.mult;
+    document.querySelectorAll('#simBadge button').forEach(x => x.classList.toggle('on', x === b));
+  });
+
+  $('#fabLocate').onclick = () => { if (!S.pos) { toast('현재 위치를 아직 받지 못했어요.'); return; } setFollow(true); if (!S.nav) MV?.panTo(S.pos, 16); };
+  $('#fabSettings').onclick = openSettings;
+  $('#clockGear').onclick = openSettings;
+  $('#fabTraffic').onclick = () => {
+    CFG.traffic = !CFG.traffic; LS.set('config', { ...LS.get('config', {}), traffic: CFG.traffic });
+    MV?.setTraffic?.(CFG.traffic); toast(CFG.traffic ? '🚦 실시간 교통 표시 켬' : '실시간 교통 표시 끔');
+  };
+  $('#fabFull').onclick = () => {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else if (el.requestFullscreen || el.webkitRequestFullscreen) (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    else toast('iPhone/iPad는 공유 → "홈 화면에 추가"로 열면 전체 화면이 됩니다.', 5000);
+  };
+
+  $('#settingsClose').onclick = () => { $('#settings').hidden = true; };
+  $('#settings').addEventListener('click', e => { if (e.target.id === 'settings') $('#settings').hidden = true; });
+  $('#settingsSave').onclick = saveSettings;
+  $('#clearPlaces').onclick = () => { ['home', 'work', 'recents'].forEach(k => LS.del(k)); renderQuick(); toast('기록을 지웠어요'); };
+  $('#spLogout').onclick = () => { spLogout(); toast('Spotify에서 로그아웃했어요'); };
+
+  // Spotify
+  $('#spLoginBtn').onclick = spLogin;
+  $('#spPlay').onclick = spTogglePlay;
+  $('#spNext').onclick = () => spCmd(d => spApi(qs('/me/player/next', d), { method: 'POST' }));
+  $('#spPrev').onclick = () => spCmd(d => spApi(qs('/me/player/previous', d), { method: 'POST' }));
+  $('#spShuffle').onclick = () => spCmd(d => spApi(qs(`/me/player/shuffle?state=${!SP.state?.shuffle_state}`, d), { method: 'PUT' }));
+  $('#spRepeat').onclick = () => {
+    const next = { off: 'context', context: 'track', track: 'off' }[SP.state?.repeat_state || 'off'];
+    spCmd(d => spApi(qs(`/me/player/repeat?state=${next}`, d), { method: 'PUT' }));
+  };
+  $('#spProgress').onclick = e => {
+    const it = SP.state?.item; if (!it) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const ms = Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * it.duration_ms);
+    SP.state.progress_ms = ms; SP.at = Date.now(); spTickProgress();
+    spCmd(d => spApi(qs(`/me/player/seek?position_ms=${ms}`, d), { method: 'PUT' }));
+  };
+  $('#spReload').onclick = spLoadPlaylists;
+  $('#spList').addEventListener('click', e => {
+    const b = e.target.closest('.pl'); if (!b) return;
+    const p = SP.playlists[+b.dataset.i];
+    spCmd(d => spApi(qs('/me/player/play', d), { method: 'PUT', body: { context_uri: p.uri } }));
+    toast('▶ ' + p.name);
+  });
+
+  window.addEventListener('resize', () => MV?.resize());
+}
+
+/* ════════════ 13. 시작 ════════════ */
+async function main() {
+  if (CFG.navMode === 'app') document.body.classList.add('mode-app');
+  document.body.classList.toggle('lite', !!CFG.lite);
+  applyTheme(); setInterval(applyTheme, 5 * 60e3);
+  tickClock(); setInterval(tickClock, 1000);
+  setInterval(spTickProgress, 500);
+  setInterval(() => maybeUpdateWeather(), 60e3);
+  renderQuick(); renderVoiceBtn(); bindUI(); bindLaunch(); renderLaunch();
+  spInit();
+  maybeUpdateWeather(true);
+  if (CFG.navMode === 'app') {
+    document.body.classList.add('mode-app');
+    geoForWeather();
+  } else {
+    startGeo();
+    await initMap();
+  }
+}
+main();
+</script>
+</body>
+</html>
