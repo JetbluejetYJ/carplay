@@ -140,7 +140,7 @@ body.map-dark:not(.traffic-on) #map.is-naver img{filter:invert(.92) hue-rotate(1
 .sp-connect p{margin:0;color:var(--sub);font-size:15px;line-height:1.5;word-break:keep-all}
 .sp-logo{width:64px;height:64px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#000}
 .sp-now{display:flex;gap:clamp(10px,4cqw,18px);align-items:center}
-#spArt{flex:none;width:clamp(64px,30cqw,150px);aspect-ratio:1;border-radius:12px;object-fit:cover;background:var(--panel3);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#spArt{flex:none;width:clamp(56px,min(30cqw,30cqh),150px);aspect-ratio:1;border-radius:12px;object-fit:cover;background:var(--panel3);box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .sp-meta{flex:1;min-width:0}
 #spTitle{font-size:clamp(16px,6cqw,24px);font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
 #spArtist{font-size:clamp(13px,4.4cqw,17px);color:#d1d5db;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -251,6 +251,24 @@ body:not(.mode-app) #launchPanel{display:none}
 .fav-add input{flex:1;-webkit-user-select:text;user-select:text}
 #favResults .res{padding:10px 6px}
 
+/* ───── 내 위치 지도 모드 (위젯용) ───── */
+body.mode-track #searchBox, body.mode-track #routeCard, body.mode-track #turnWrap, body.mode-track #navBar,
+body.mode-track #simBadge, body.mode-track #fabTraffic{display:none!important}
+#placeChip{position:absolute;left:12px;top:12px;z-index:500;padding:10px 16px;font-size:16px;font-weight:700;max-width:calc(100% - 92px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#placeChip small{display:block;font-size:12px;font-weight:500;color:var(--sub);margin-top:2px}
+body:not(.mode-track) #placeChip{display:none}
+
+/* 휴대폰 세로: 지도 44% · 음악 34% · 시계/날씨 22% */
+@media (max-aspect-ratio:1/1){
+  body.mode-track #app{grid-template-rows:minmax(0,44fr) minmax(0,34fr) minmax(0,22fr)}
+}
+/* 음악 칸이 작으면 플레이리스트를 숨기고 버튼을 줄임 */
+@container (max-height: 360px){ .sp-list-head, .sp-list{display:none} #spMain{justify-content:center} }
+@container (max-height: 270px){
+  .sp-btn{width:42px;height:42px} .sp-btn.play{width:54px;height:54px}
+  .sp-ctrls{margin:2px 0} .sp-progress{margin-top:6px}
+}
+
 /* ───── 가벼운 화면 (구형 iPad용: 블러·필터 끄기) ───── */
 body.lite .glass{background:rgba(22,23,27,.97);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
 body.lite .sp-bg{inset:0;filter:none;opacity:.18;transition:none}
@@ -317,6 +335,7 @@ body.lite .car-marker{transition:none}
       <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
 
+    <div id="placeChip" class="glass">📍 위치 확인 중…</div>
     <div id="speedo"><b id="speedVal">0</b><span>km/h</span></div>
 
     <div id="simBadge" class="glass" hidden>
@@ -411,7 +430,8 @@ body.lite .car-marker{transition:none}
     <div class="field">
       <label for="cfgNavMode">내비게이션 방식</label>
       <select id="cfgNavMode">
-        <option value="builtin">이 화면 안의 내장 내비게이션 (네이버 지도 + 실시간 교통)</option>
+        <option value="track">내 위치 지도 (위젯용 · 키 필요 없음)</option>
+        <option value="builtin">이 화면 안의 내장 내비게이션 (길찾기·음성 안내)</option>
         <option value="app">버튼으로 네이버 지도 앱 실행 (신호등·카메라 안내는 앱에서)</option>
       </select>
       <div class="hint">'네이버 지도 앱 실행' 방식에서는 아래 네이버 Client ID / 프록시 주소가 필요 없어요.</div>
@@ -488,9 +508,9 @@ body.lite .car-marker{transition:none}
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
 const DEFAULT_CONFIG = {
-  navMode: 'builtin',    // builtin: 이 화면 안의 내비게이션 | app: 버튼으로 네이버 지도 앱 실행
+  navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: true,            // 가벼운 화면: 블러/필터 효과를 꺼서 구형 iPad에서도 부드럽게
-  naverKeyId: '7n1ohwtswn', // 네이버 클라우드 Maps Application Client ID
+  naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
   spotifyClientId: '7afc32c54551444e93c554bd45a29ebe', // Spotify 앱 Client ID
   theme: 'auto',         // auto | dark | light
@@ -507,7 +527,7 @@ const LS = {
 };
 const CFG = { ...DEFAULT_CONFIG };
 for (const [k, v] of Object.entries(LS.get('config', {}) || {})) if (v !== '' && v != null) CFG[k] = v;
-if (!['builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'builtin'; // 없어진 '웹페이지 그대로' 모드 → 내장 내비
+if (!['track', 'builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'track'; // 없어진 '웹페이지 그대로' 모드 → 내장 내비
 
 /* ════════════ 1. 유틸 ════════════ */
 const $ = (s, r = document) => r.querySelector(s);
@@ -720,6 +740,7 @@ const LeafletAdapter = {
 };
 
 let MV = null; // 현재 사용 중인 지도 어댑터
+let switching = false;
 
 function loadNaver(id) {
   return new Promise((resolve, reject) => {
@@ -747,7 +768,7 @@ async function loadLeaflet() {
 }
 async function initMap() {
   const c = S.pos || LS.get('lastPos') || DEFAULT_CENTER;
-  if (CFG.naverKeyId) {
+  if (CFG.naverKeyId && CFG.navMode === 'builtin') {
     try { await loadNaver(CFG.naverKeyId); MV = NaverAdapter; MV.init($('#map'), c); }
     catch (e) { console.warn(e); MV = null; toast('네이버 지도를 불러오지 못해 OpenStreetMap을 사용합니다.', 5000); }
   }
@@ -755,11 +776,18 @@ async function initMap() {
   redrawMap();
 }
 async function switchToLeaflet() {
-  if (MV === LeafletAdapter) return;
-  const c = MV ? MV.center() : (S.pos || DEFAULT_CENTER);
-  MV?.destroy(); $('#fabTraffic').hidden = true; document.body.classList.remove('traffic-on');
-  await loadLeaflet(); MV = LeafletAdapter; MV.init($('#map'), c);
-  redrawMap();
+  if (MV === LeafletAdapter || switching) return;
+  switching = true;
+  // 인증 실패 후엔 네이버 스크립트가 망가져 있어서 어떤 호출도 실패할 수 있음 → 전부 감싸기
+  let c = null; try { c = MV?.center(); } catch {}
+  c = c || S.pos || LS.get('lastPos') || DEFAULT_CENTER;
+  const old = MV; MV = null; // 전환 중에는 지도 호출을 멈춤
+  try { old?.destroy(); } catch {}
+  $('#map').innerHTML = ''; $('#map').classList.remove('is-naver');
+  $('#fabTraffic').hidden = true; document.body.classList.remove('traffic-on');
+  try { await loadLeaflet(); MV = LeafletAdapter; MV.init($('#map'), c); redrawMap(); }
+  catch (e) { console.warn(e); toast('지도를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); }
+  finally { switching = false; }
 }
 function redrawMap() {
   if (!MV) return;
@@ -790,7 +818,9 @@ function setFollow(on) {
 function followCamera(p, force) {
   if (!MV || (!S.follow && !force)) return;
   let z = null;
-  if (S.nav) { const kmh = S.speed * 3.6; z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15; }
+  const kmh = S.speed * 3.6;
+  if (S.nav) z = kmh < 40 ? 17 : kmh < 80 ? 16 : 15;
+  else if (CFG.navMode === 'track') z = kmh < 15 ? 16 : kmh < 60 ? 15 : kmh < 100 ? 14 : 13;
   MV.panTo(p, z);
 }
 function onMapClick() { $('#searchInput').blur(); hideResults(); }
@@ -832,6 +862,20 @@ function handlePosition(fix) {
   }
   if (Date.now() - lastSave > 30000 && !S.sim) { lastSave = Date.now(); LS.set('lastPos', { lat: fix.lat, lng: fix.lng }); }
   maybeUpdateWeather();
+  if (CFG.navMode === 'track') maybeUpdatePlace(fix);
+}
+const PL = { last: null, t: 0, busy: false };
+async function maybeUpdatePlace(p) {
+  if (PL.busy || (PL.last && hav(PL.last, p) < 250 && Date.now() - PL.t < 5 * 60e3) || Date.now() - PL.t < 20000) return;
+  PL.busy = true; PL.last = { lat: p.lat, lng: p.lng }; PL.t = Date.now();
+  try {
+    const j = await fetchJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=ko&lat=${p.lat}&lon=${p.lng}`);
+    const a = j.address || {};
+    const road = a.road || a.pedestrian || a.neighbourhood || a.suburb || a.quarter || '';
+    const area = [a.city || a.county || a.province, a.city_district || a.borough, a.suburb || a.quarter].filter((x, i, arr) => x && arr.indexOf(x) === i && x !== road).join(' ');
+    $('#placeChip').innerHTML = `📍 ${esc(road || area || '현재 위치')}${road && area ? `<small>${esc(area)}</small>` : ''}`;
+  } catch (e) { console.warn('place', e); }
+  finally { PL.busy = false; }
 }
 
 /* ════════════ 6. 검색 ════════════ */
@@ -915,7 +959,7 @@ async function doSearch(q) {
 }
 function searchNaverGeocode(q) {
   return new Promise(res => {
-    if (MV?.kind !== 'naver' || !naver.maps.Service) return res([]);
+    if (MV?.kind !== 'naver' || !window.naver?.maps?.Service) return res([]);
     naver.maps.Service.geocode({ query: q }, (status, response) => {
       if (status !== naver.maps.Service.Status.OK) return res([]);
       res((response.v2?.addresses || []).map(a => ({ name: a.roadAddress || a.jibunAddress, addr: a.jibunAddress || '', cat: '주소', lat: +a.y, lng: +a.x })));
@@ -1321,7 +1365,7 @@ async function updateWeather(p) {
   finally { W.busy = false; }
 }
 function reverseGeocode(p) {
-  if (MV?.kind === 'naver' && naver.maps.Service?.reverseGeocode) {
+  if (MV?.kind === 'naver' && window.naver?.maps?.Service?.reverseGeocode) {
     return new Promise(res => {
       naver.maps.Service.reverseGeocode({ coords: new naver.maps.LatLng(p.lat, p.lng), orders: 'admcode' }, (status, r) => {
         const x = status === naver.maps.Service.Status.OK && r.v2?.results?.[0]?.region;
@@ -1625,8 +1669,8 @@ function openSettings() {
   $('#cfgTheme').value = CFG.theme; $('#cfgVoice').checked = CFG.voice; $('#cfgClock24').checked = CFG.clock24;
   $('#originHint').textContent = location.origin; $('#redirectHint').textContent = redirectUri();
   $('#statusBox').innerHTML = CFG.navMode !== 'builtin' ? [
-    `내비게이션: <b>네이버 지도 앱 연동</b>`,
-    `위치(날씨용): <b>${S.realPos ? '확인됨' : '없음'}</b>`,
+    `화면 방식: <b>${CFG.navMode === 'track' ? '내 위치 지도 (OpenStreetMap)' : '네이버 지도 앱 실행 버튼'}</b>`,
+    `위치: <b>${S.realPos ? `확인됨 (오차 ±${Math.round(S.realPos.acc || 0)}m)` : '없음'}</b>`,
     `Spotify: <b>${SP.token ? '연결됨' : '연결 안 됨'}</b>`,
     location.protocol !== 'https:' && location.hostname !== 'localhost' ? '<span style="color:#fb923c">⚠ HTTPS가 아니라서 위치·Spotify가 동작하지 않을 수 있어요</span>' : ''
   ].filter(Boolean).join('<br>') : [
@@ -1752,6 +1796,7 @@ async function main() {
   renderQuick(); renderVoiceBtn(); bindUI(); bindLaunch(); renderLaunch();
   spInit();
   maybeUpdateWeather(true);
+  if (CFG.navMode === 'track') document.body.classList.add('mode-track');
   if (CFG.navMode === 'app') {
     document.body.classList.add('mode-app');
     geoForWeather();
