@@ -434,6 +434,37 @@ body.hide-air #wxAir{display:none!important}
 .ver{text-align:center;font-size:12px;color:#636366;margin:22px 0 4px}
 
 .me-dot-halo{transform-box:fill-box}
+/* 주행 기록 · 과속 경고 */
+#speedo small{display:block;margin-top:3px;font-size:10px;font-weight:600;color:#aeaeb2;white-space:nowrap;font-variant-numeric:tabular-nums}
+#speedo small:empty{display:none}
+body.hide-trip #speedo small{display:none}
+body.map-off #speedo small{font-size:min(6cqw,9cqh);margin-top:min(2cqh,6px);color:#d1d1d6}
+#speedo.over{background:#ff3b30!important;border-color:#ff3b30!important;animation:overpulse 1s ease-in-out infinite}
+#speedo.over b,#speedo.over span,#speedo.over small{color:#fff!important}
+body.map-off #speedo.over{background:none!important;animation:none}
+body.map-off #speedo.over b{color:#ff453a!important;animation:overpulse 1s ease-in-out infinite}
+@keyframes overpulse{50%{opacity:.55}}
+#speedo{cursor:pointer}
+/* 주차 위치 */
+#fabPark .p-ico{font-weight:800;font-size:20px;line-height:1;color:#e5e5ea;font-family:-apple-system,sans-serif}
+#fabPark.has-park .p-ico{color:#fff;background:#1c7ed6;border-radius:6px;padding:2px 6px}
+#carMarker{z-index:5}
+.park-pin{z-index:1;width:32px;height:32px;border-radius:10px;background:#1c7ed6;color:#fff;font:800 18px/1 -apple-system,sans-serif;display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+/* 알림 배너 */
+#banner{position:fixed;z-index:2500;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);width:min(92vw,440px);display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:22px;background:rgba(44,44,46,.94);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.45);animation:sheetup .3s}
+#banner .b-ico{font-size:28px;flex:none}
+#banner b{display:block;font-size:15px}
+#banner small{display:block;font-size:13px;color:#aeaeb2;margin-top:2px}
+/* 밤에 화면 어둡게 */
+#dimmer{position:fixed;inset:-50px;background:#000;opacity:0;pointer-events:none;z-index:1500;transition:opacity 1s}
+/* 다음 곡 */
+#spUpNext{display:flex;align-items:center;gap:10px;margin-top:2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.07);font-size:14px;min-width:0}
+#spUpNext span{flex:none;font-size:11px;font-weight:700;color:rgba(235,235,245,.6);text-transform:uppercase}
+#spUpNext b{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-height: 300px){ #spUpNext{display:none!important} }
+.sp-now{touch-action:pan-y}
+/* 비 예보 */
+#wxSoon{font-size:min(6.8cqw,10cqh);font-weight:700;color:#ffd43b;margin-top:2px;max-width:100%}
 /* 내 위치 아이콘: 도는 부분/항상 똑바른 부분 */
 .car-marker{position:relative;transition:none!important;will-change:auto}
 .car-marker .me-rot,.car-marker .me-up{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
@@ -516,12 +547,13 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
       <button class="fab glass" id="fabLocate" aria-label="현재 위치 따라가기"><svg viewBox="0 0 24 24"><path class="loc-line" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="loc-fill" d="M20.5 3.5 3.5 10.6l7.3 2.1 2.1 7.3z" fill="currentColor"/></svg></button>
       <button class="fab glass" id="fabSettings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="fab glass" id="fabTraffic" aria-label="실시간 교통" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg></button>
+      <button class="fab glass" id="fabPark" aria-label="주차 위치"><span class="p-ico">P</span></button>
       <button class="fab glass" id="fabMapOff" aria-label="지도 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M3 3l18 18"/></svg></button>
       <button class="fab glass" id="fabFull" aria-label="전체 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
 
     <div id="placeChip" class="glass">📍 위치 확인 중…</div>
-    <div id="speedo"><b id="speedVal">0</b><span>km/h</span></div>
+    <div id="speedo"><b id="speedVal">0</b><span>km/h</span><small id="tripLine"></small></div>
     <div id="osmAttr" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 
     <div id="simBadge" class="glass" hidden>
@@ -583,6 +615,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
           <button class="sp-btn" id="spNext" aria-label="다음 곡"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM4 5v14l10.5-7z"/></svg></button>
           <button class="sp-btn small off" id="spRepeat" aria-label="반복"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg><span class="one" hidden>1</span></button>
         </div>
+        <div id="spUpNext" hidden><span>다음 곡</span><b></b></div>
         <div class="sp-list-head"><span>내 플레이리스트</span><button id="spReload">새로고침</button></div>
         <div class="sp-list" id="spList"></div>
       </div>
@@ -603,6 +636,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
     <div class="wx-main"><span id="wxIcon">⛅</span><span id="wxTemp">--°</span></div>
     <div id="wxDesc">날씨 불러오는 중</div>
     <div id="wxRange"></div>
+    <div id="wxSoon" hidden></div>
     <div id="wxAir" hidden></div>
   </section>
 </div>
@@ -633,6 +667,14 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
         <button class="row link" id="clearTrail">지나온 길 지우기</button>
       </div>
 
+      <div class="grp-title">운전</div>
+      <div class="grp">
+        <label class="row"><span>주행 기록 표시<small>속도계 아래에 오늘 달린 거리·시간</small></span><input type="checkbox" class="ios-toggle" data-key="showTrip"></label>
+        <label class="row"><span>장시간 운전 휴식 알림<small>2시간 연속 운전하면 화면으로 알려줘요</small></span><input type="checkbox" class="ios-toggle" data-key="restAlert"></label>
+        <div class="row"><span>밤에 화면 어둡게<small>해가 진 뒤 눈부심 줄이기</small></span><div class="seg" data-key="nightDim"><button data-v="0">끔</button><button data-v="25">약하게</button><button data-v="45">강하게</button></div></div>
+        <button class="row link" id="tripShow">주행 기록 자세히 보기</button>
+      </div>
+
       <div class="grp-title">화면</div>
       <div class="grp">
         <div class="row"><span>칸 비율</span><div class="seg" data-key="layout"><button data-v="map">지도 크게</button><button data-v="balance">균형</button><button data-v="music">음악 크게</button></div></div>
@@ -645,6 +687,8 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
       <div class="grp-title">음악</div>
       <div class="grp">
         <label class="row"><span>플레이리스트 보기<small>칸이 충분히 클 때만 보여요</small></span><input type="checkbox" class="ios-toggle" data-key="showPlaylists"></label>
+        <label class="row"><span>다음 곡 보기</span><input type="checkbox" class="ios-toggle" data-key="showUpNext"></label>
+        <label class="row"><span>밀어서 곡 넘기기<small>음악 칸을 좌우로 밀기 · 앨범을 두 번 눌러 재생/정지</small></span><input type="checkbox" class="ios-toggle" data-key="musicGestures"></label>
         <label class="row"><span>앨범 커버 배경</span><input type="checkbox" class="ios-toggle" data-key="albumBg"></label>
         <button class="row link danger" id="spLogout">Spotify 로그아웃</button>
       </div>
@@ -720,6 +764,8 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
   </div>
 </div>
 
+<div id="banner" hidden><div class="b-ico"></div><div class="b-txt"><b></b><small></small></div></div>
+<div id="dimmer"></div>
 <div id="toast"></div>
 
 <script>
@@ -729,7 +775,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-27 iOS v7'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-27 iOS v9'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -747,6 +793,12 @@ const DEFAULT_CONFIG = {
   clockSeconds: false, showDate: true, showAir: true,
   mapOff: false,         // 지도 끄기 (음악 크게 + 속도만 표시)
   showPoi: true,         // 편의점·병원·주유소·카페 등 아이콘
+  speedLimit: 0,         // 과속 경고 속도 (0=끔)
+  showTrip: true,        // 주행 기록(거리·시간) 표시
+  restAlert: true,       // 2시간 연속 운전 휴식 알림
+  nightDim: 0,           // 밤에 화면 어둡게 (0/25/45 %)
+  showUpNext: true,      // 다음 곡 표시
+  musicGestures: true,   // 음악 칸 밀어서 곡 넘기기 / 앨범 두 번 눌러 재생·정지
   hAdjust: 0,            // 홈 화면 앱 화면 높이 미세 조정(px)
   naverKeyId: '',        // (사용 안 함) 네이버 클라우드 Maps Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
@@ -1064,6 +1116,10 @@ const LeafletAdapter = {
   },
   center() { const c = this.map.getCenter(); return { lat: c.lat, lng: c.lng }; },
   resize() { this.map.invalidateSize(); },
+  setParking(p) {
+    this.park?.remove(); this.park = null;
+    if (p) this.park = L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ html: '<div class="park-pin">P</div>', className: 'leaflet-div-icon-clear', iconSize: [32, 32], iconAnchor: [16, 16] }) }).addTo(this.map);
+  },
   refreshMe() {
     if (this.me) { const ll = this.me.getLatLng(); this.me.remove(); this.me = null; this.setMe({ lat: ll.lat, lng: ll.lng }, lastShownH); }
     this.trailLine?.setStyle({ color: CFG.meColor === '#ffffff' ? '#aeaeb2' : CFG.meColor });
@@ -1221,6 +1277,11 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
   },
   center() { const c = this.map.getCenter(); return { lat: c.lat, lng: c.lng }; },
   resize() { this.map?.resize(); },
+  setParking(p) {
+    if (!p) { this.park?.remove(); this.park = null; return; }
+    if (!this.park) { const e = document.createElement('div'); e.className = 'park-pin'; e.textContent = 'P'; this.park = new maplibregl.Marker({ element: e }).setLngLat([p.lng, p.lat]).addTo(this.map); }
+    else this.park.setLngLat([p.lng, p.lat]);
+  },
   async applyTheme() { const d = isDarkMap(); if (!this.map || d === this.dark) return; this.dark = d; this.map.setStyle(buildMapStyle(d, await getOfmBase()), { diff: false }); },
   refreshMe() {
     if (this.me) { const ll = this.me.getLngLat(); this.me.remove(); this.me = null; this.setMe({ lat: ll.lat, lng: ll.lng }, lastShownH); }
@@ -1295,6 +1356,7 @@ async function switchToLeaflet() {
 }
 function redrawMap() {
   if (!MV) return;
+  MV.setParking?.(LS.get('parking'));
   const R = S.nav?.route || S.preview?.route;
   if (R) MV.setRoute(R.path);
   const d = S.nav?.dest || S.preview?.dest;
@@ -1304,9 +1366,12 @@ function redrawMap() {
 function isDarkMap() {
   if (CFG.theme === 'dark') return true;
   if (CFG.theme === 'light') return false;
+  const now = Date.now(), sun = W.sun;
+  if (sun && sun.rise > 0 && sun.set > 0 && new Date(sun.rise).toDateString() === new Date().toDateString())
+    return now < sun.rise + 15 * 60e3 || now > sun.set - 15 * 60e3; // 실제 해 뜨고 지는 시간 기준
   const h = new Date().getHours(); return h >= 18 || h < 7;
 }
-function applyTheme() { document.body.classList.toggle('map-dark', isDarkMap()); MV?.applyTheme(); }
+function applyTheme() { document.body.classList.toggle('map-dark', isDarkMap()); MV?.applyTheme(); applyDim(); }
 
 /* ════════════ 5. 위치 ════════════ */
 let followTimer = null;
@@ -1353,6 +1418,7 @@ function handlePosition(fix) {
   else if (prev && fix.t > prev.t) S.speed = hav(prev, fix) / ((fix.t - prev.t) / 1000);
   S.pos = fix;
   $('#speedVal').textContent = Math.round(S.speed * 3.6);
+  updateSpeedAlert(); updateTrip(fix);
 
   let shown = fix, shownH = S.heading;
   if (S.nav) {
@@ -1835,7 +1901,7 @@ const WMO = {
   80: ['🌦️', '소나기'], 81: ['🌧️', '소나기'], 82: ['⛈️', '강한 소나기'], 85: ['🌨️', '눈 소나기'], 86: ['🌨️', '강한 눈 소나기'],
   95: ['⛈️', '뇌우'], 96: ['⛈️', '우박 동반 뇌우'], 99: ['⛈️', '우박 동반 뇌우']
 };
-const W = { last: null, t: 0, busy: false };
+const W = { last: null, t: 0, busy: false, sun: null };
 function maybeUpdateWeather(force) {
   const p = S.realPos || S.pos || LS.get('lastPos');
   if (!p || W.busy) return;
@@ -1851,7 +1917,7 @@ async function updateWeather(p) {
   try {
     const q = `latitude=${p.lat.toFixed(3)}&longitude=${p.lng.toFixed(3)}`;
     const [wx, aq, place] = await Promise.allSettled([
-      fetchJSON(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`),
+      fetchJSON(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&hourly=precipitation_probability,precipitation,weather_code&forecast_hours=4&timezone=auto&forecast_days=1`),
       fetchJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=pm10,pm2_5`),
       reverseGeocode(p)
     ]);
@@ -1863,6 +1929,21 @@ async function updateWeather(p) {
       $('#wxTemp').textContent = Math.round(c.temperature_2m) + '°';
       $('#wxDesc').textContent = desc;
       const pop = d.precipitation_probability_max?.[0];
+      // 해 뜨고 지는 시간 → 자동 다크모드에 사용
+      if (d.sunrise?.[0] && d.sunset?.[0]) { W.sun = { rise: new Date(d.sunrise[0]).getTime(), set: new Date(d.sunset[0]).getTime() }; applyTheme(); }
+      // 몇 시간 안에 비/눈 소식
+      const hr = wx.value.hourly, soon = $('#wxSoon'); soon.hidden = true;
+      if (hr?.time && c.weather_code < 51) {
+        for (let i = 0; i < hr.time.length; i++) {
+          const t = new Date(hr.time[i]).getTime(), ahead = Math.round((t - Date.now()) / 3600e3);
+          if (ahead < 1 || ahead > 3) continue;
+          const code = hr.weather_code?.[i] ?? 0, pr = hr.precipitation_probability?.[i] ?? 0, mm = hr.precipitation?.[i] ?? 0;
+          if (code >= 51 || pr >= 60 || mm >= .3) {
+            const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
+            soon.textContent = `${snow ? '❄️' : '☔'} ${ahead}시간 뒤 ${snow ? '눈' : '비'} 소식`; soon.hidden = false; break;
+          }
+        }
+      }
       $('#wxRange').textContent = `최고:${Math.round(d.temperature_2m_max[0])}° 최저:${Math.round(d.temperature_2m_min[0])}°${pop != null && pop >= 30 ? ` · ☔${pop}%` : ''}`;
       const wc = c.weather_code, wp = $('#weatherPanel');
       wp.classList.remove('wx-clear', 'wx-cloud', 'wx-rain', 'wx-snow');
@@ -2042,6 +2123,7 @@ function spRender() {
   $('#spTitle').textContent = it.name;
   $('#spArtist').textContent = it.artists ? it.artists.map(a => a.name).join(', ') : (it.show?.name || '');
   $('#spDevice').textContent = st.device ? '🔈 ' + st.device.name : '';
+  if (it.id !== SP.lastItemId) { SP.lastItemId = it.id; spLoadQueue(); }
   const ctx = st.context?.uri;
   document.querySelectorAll('.pl').forEach(el => el.classList.toggle('playing', el.dataset.uri === ctx));
   spTickProgress();
@@ -2078,6 +2160,35 @@ function spTogglePlay() {
   const playing = SP.state?.is_playing;
   if (SP.state) { SP.state.progress_ms = (SP.state.progress_ms || 0) + (playing ? Date.now() - SP.at : 0); SP.at = Date.now(); SP.state.is_playing = !playing; spRender(); }
   spCmd(d => spApi(qs(playing ? '/me/player/pause' : '/me/player/play', d), { method: 'PUT' }));
+}
+let queueFails = 0;
+async function spLoadQueue() {
+  const el = $('#spUpNext');
+  if (!CFG.showUpNext || queueFails >= 3) { el.hidden = true; return; }
+  try {
+    const q = await spApi('/me/player/queue'), n = q?.queue?.[0]; queueFails = 0;
+    if (!n) { el.hidden = true; return; }
+    el.querySelector('b').textContent = n.name + (n.artists ? ' · ' + n.artists.map(a => a.name).join(', ') : n.show ? ' · ' + n.show.name : '');
+    el.hidden = false;
+  } catch (e) { queueFails++; el.hidden = true; }
+}
+function bindMusicGestures() {
+  const area = $('#spMain'); let sx = 0, sy = 0, st = 0, lastTap = 0;
+  area.addEventListener('pointerdown', e => {
+    if (e.target.closest('button, .sp-progress, .sp-list, a')) { st = 0; return; }
+    sx = e.clientX; sy = e.clientY; st = Date.now();
+  });
+  area.addEventListener('pointerup', e => {
+    if (!st || !CFG.musicGestures) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy, dt = Date.now() - st; st = 0;
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 60 && dt < 800) { // 좌우로 밀기
+      if (dx < 0) { $('#spNext').click(); toast('⏭ 다음 곡', 1200); } else { $('#spPrev').click(); toast('⏮ 이전 곡', 1200); }
+      return;
+    }
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && e.target.closest('#spArt')) { // 앨범 두 번 누르기
+      if (Date.now() - lastTap < 400) { lastTap = 0; spTogglePlay(); } else lastTap = Date.now();
+    }
+  });
 }
 async function spLoadPlaylists() {
   const el = $('#spList');
@@ -2220,6 +2331,91 @@ function geoForWeather() {
   get(); setInterval(get, 10 * 60e3);
 }
 
+/* ════════════ 10-3. 운전 보조: 주행 기록 · 과속 경고 · 휴식 알림 · 주차 위치 ════════════ */
+const TRIP_EMPTY = () => ({ dist: 0, moving: 0, max: 0, start: Date.now(), last: null, driveSince: null, stopSince: null, restWarned: 0 });
+const TRIP = Object.assign(TRIP_EMPTY(), LS.get('trip', {}));
+let tripSaveT = 0;
+function saveTrip(force) { if (force || Date.now() - tripSaveT > 15000) { tripSaveT = Date.now(); LS.set('trip', TRIP); } }
+function resetTrip() { Object.assign(TRIP, TRIP_EMPTY()); saveTrip(true); renderTrip(); }
+function updateTrip(fix) {
+  if (S.sim || (fix.acc || 0) > 40) return;
+  const now = fix.t || Date.now(), v = S.speed, L = TRIP.last;
+  if (L && now - L.t > 30 * 60e3) Object.assign(TRIP, TRIP_EMPTY(), { start: now }); // 30분 넘게 끊겼으면 새 주행으로
+  if (L && TRIP.last) {
+    const d = hav(L, fix), dt = (now - L.t) / 1000;
+    if (dt > 0 && dt < 30 && d < 300 && v > 1.5) { TRIP.dist += d; TRIP.moving += dt; }
+  }
+  if (v > 1.5 && v < 70) TRIP.max = Math.max(TRIP.max, v); // 70 m/s(252 km/h) 이상은 GPS 튐
+  if (v > 2.8) { TRIP.stopSince = null; TRIP.driveSince = TRIP.driveSince || now; } // 약 10 km/h 넘으면 운전 중
+  else { TRIP.stopSince = TRIP.stopSince || now; if (now - TRIP.stopSince > 10 * 60e3) { TRIP.driveSince = null; TRIP.restWarned = 0; } } // 10분 쉬면 초기화
+  if (CFG.restAlert && TRIP.driveSince) {
+    const hrs = Math.floor((now - TRIP.driveSince) / 3600e3);
+    if (hrs >= 2 && hrs > TRIP.restWarned) { TRIP.restWarned = hrs; showBanner('☕', `${hrs}시간째 쉬지 않고 운전 중이에요`, '가까운 휴게소나 졸음쉼터에서 잠깐 쉬어 가세요.', 15000); }
+  }
+  TRIP.last = { lat: fix.lat, lng: fix.lng, t: now };
+  saveTrip(); renderTrip();
+}
+const fmtKm = m => (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+function renderTrip() {
+  $('#tripLine').textContent = TRIP.dist > 50 ? `${fmtKm(TRIP.dist)} · ${fmtDur(TRIP.moving)}` : '';
+}
+function showTripSheet() {
+  const avg = TRIP.moving > 5 ? TRIP.dist / TRIP.moving * 3.6 : 0;
+  const since = new Date(TRIP.start), cont = TRIP.driveSince ? fmtDur((Date.now() - TRIP.driveSince) / 1000) : '-';
+  actionSheet('주행 기록', `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
+      <div><small style="color:#8e8e93">달린 거리</small><br><b style="font-size:22px">${fmtKm(TRIP.dist)}</b></div>
+      <div><small style="color:#8e8e93">달린 시간</small><br><b style="font-size:22px">${TRIP.moving > 0 ? fmtDur(TRIP.moving) : '0분'}</b></div>
+      <div><small style="color:#8e8e93">평균 속도</small><br><b style="font-size:22px">${Math.round(avg)} km/h</b></div>
+      <div><small style="color:#8e8e93">최고 속도</small><br><b style="font-size:22px">${Math.round(TRIP.max * 3.6)} km/h</b></div>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:#8e8e93">${since.getMonth() + 1}/${since.getDate()} ${fmtClock(since)}부터 · 연속 운전 ${cont}<br>30분 넘게 위치가 끊기면 새 주행으로 시작해요.</div>`,
+    [{ label: '주행 기록 초기화', danger: true, fn: () => { resetTrip(); toast('주행 기록을 초기화했어요'); } }]);
+}
+let overState = false;
+function updateSpeedAlert() {
+  const over = false; // 과속 경고 기능 사용 안 함
+  if (over !== overState) { overState = over; $('#speedo').classList.toggle('over', over); }
+}
+// 화면 위 알림 배너 (소리 없이)
+let bannerT;
+function showBanner(ico, title, msg, ms = 10000) {
+  const b = $('#banner'); b.querySelector('.b-ico').textContent = ico; b.querySelector('b').textContent = title; b.querySelector('small').textContent = msg || '';
+  b.hidden = false; clearTimeout(bannerT); bannerT = setTimeout(() => { b.hidden = true; }, ms);
+}
+// iOS 스타일 선택 시트
+function actionSheet(title, bodyHtml, actions = []) {
+  const m = document.createElement('div'); m.className = 'modal ios-modal';
+  m.innerHTML = `<div class="sheet ios-sheet"><div class="sheet-bar"><span></span><b>${esc(title)}</b><button>닫기</button></div>
+    <div class="sheet-scroll"><div class="grp" style="margin-top:14px;padding:14px 16px;font-size:15px;line-height:1.55">${bodyHtml}</div>
+    ${actions.length ? `<div class="grp" style="margin-top:14px">${actions.map((a, i) => `<button class="row link ${a.danger ? 'danger' : ''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}</div></div>`;
+  m.addEventListener('click', e => {
+    if (e.target === m || e.target.closest('.sheet-bar button')) { m.remove(); return; }
+    const b = e.target.closest('[data-i]'); if (b) { m.remove(); actions[+b.dataset.i].fn(); }
+  });
+  document.body.appendChild(m);
+}
+// 주차 위치
+function fmtAgo(t) { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? '방금' : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.floor(m / 60)}시간 ${m % 60}분 전` : `${Math.floor(m / 1440)}일 전`; }
+function renderParkBtn() { $('#fabPark').classList.toggle('has-park', !!LS.get('parking')); }
+function saveParking() {
+  const pos = S.realPos || S.pos; if (!pos) { toast('현재 위치를 아직 받지 못했어요.'); return; }
+  const p = { lat: pos.lat, lng: pos.lng, t: Date.now() };
+  LS.set('parking', p); MV?.setParking?.(p); renderParkBtn(); toast('🅿️ 지금 위치를 주차 위치로 저장했어요');
+}
+function onParkBtn() {
+  const p = LS.get('parking'); if (!p) { saveParking(); return; }
+  const here = S.realPos || S.pos, d = here ? fmtDist(hav(here, p)) : '-';
+  actionSheet('주차 위치', `🅿️ 여기서 <b>${d}</b> · ${fmtAgo(p.t)} 저장`, [
+    { label: '네이버 지도로 걸어서 찾아가기', fn: () => openNmap('route/walk', { dlat: p.lat.toFixed(7), dlng: p.lng.toFixed(7), dname: '주차 위치' }) },
+    { label: '지도에서 보기', fn: () => { if (!MV) return; onUserMapMove(); MV.panTo(p, 17); } },
+    { label: '지금 위치로 다시 저장', fn: saveParking },
+    { label: '주차 위치 지우기', danger: true, fn: () => { LS.del('parking'); MV?.setParking?.(null); renderParkBtn(); toast('주차 위치를 지웠어요'); } }
+  ]);
+}
+// 밤에 화면 어둡게
+function applyDim() { $('#dimmer').style.opacity = (Number(CFG.nightDim) > 0 && isDarkMap()) ? Number(CFG.nightDim) / 100 : 0; }
+
 /* ════════════ 11. 설정 ════════════ */
 let advSnapshot = null;
 function applyDisplay() {
@@ -2233,6 +2429,7 @@ function applyDisplay() {
   b.classList.toggle('hide-date', !CFG.showDate);
   b.classList.toggle('hide-air', !CFG.showAir);
   b.classList.toggle('sec-on', !!CFG.clockSeconds);
+  b.classList.toggle('hide-trip', !CFG.showTrip);
   b.classList.toggle('map-off', !!CFG.mapOff && CFG.navMode === 'track');
   document.documentElement.style.setProperty('--accent', CFG.accent);
 }
@@ -2253,6 +2450,9 @@ function setCfg(k, v) {
     setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
   }
   if (k === 'hAdjust') fitViewport();
+  if (k === 'nightDim') applyDim();
+  if (k === 'speedLimit') { overState = !overState; updateSpeedAlert(); }
+  if (k === 'showUpNext') { queueFails = 0; if (v) spLoadQueue(); else $('#spUpNext').hidden = true; }
   if (k === 'showPoi' && MV?.kind === 'gl' && MV.map.getLayer('poi')) MV.map.setLayoutProperty('poi', 'visibility', v ? 'visible' : 'none');
   renderSettingsControls();
 }
@@ -2310,6 +2510,10 @@ function bindSettings() {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
     const d = +b.dataset.h; setCfg('hAdjust', d === 0 ? 0 : (Number(CFG.hAdjust) || 0) + d);
   });
+  $('#fabPark').onclick = e => { e.stopPropagation(); onParkBtn(); };
+  $('#tripShow').onclick = showTripSheet;
+  $('#speedo').addEventListener('click', e => { if (CFG.mapOff && CFG.navMode === 'track') return; e.stopPropagation(); showTripSheet(); });
+  $('#banner').onclick = () => { $('#banner').hidden = true; };
   $('#fabMapOff').onclick = e => { e.stopPropagation(); setCfg('mapOff', true); toast('지도를 껐어요. 속도 칸을 누르면 다시 켜져요.'); };
   $('#navPanel').addEventListener('click', () => { if (CFG.mapOff && CFG.navMode === 'track') setCfg('mapOff', false); });
 }
@@ -2414,7 +2618,7 @@ async function main() {
   tickClock(); setInterval(tickClock, 1000);
   setInterval(spTickProgress, 500);
   setInterval(() => maybeUpdateWeather(), 60e3);
-  renderQuick(); renderVoiceBtn(); bindUI(); bindLaunch(); renderLaunch();
+  renderQuick(); renderVoiceBtn(); bindUI(); bindLaunch(); renderLaunch(); bindMusicGestures(); renderTrip(); renderParkBtn();
   spInit();
   maybeUpdateWeather(true);
   if (CFG.navMode === 'track') document.body.classList.add('mode-track');
