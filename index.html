@@ -34,7 +34,7 @@ input,select{font:inherit;color:inherit}
 svg{display:block}
 
 /* ───── 레이아웃 (스케치와 같은 비율) ───── */
-#app{position:fixed;inset:0;display:grid;gap:var(--gap);
+#app{position:fixed;inset:0;bottom:auto;height:var(--appH,100%);display:grid;gap:var(--gap);
   padding:calc(var(--gap) + env(safe-area-inset-top)) calc(var(--gap) + env(safe-area-inset-right)) calc(var(--gap) + env(safe-area-inset-bottom)) calc(var(--gap) + env(safe-area-inset-left));
   grid-template-columns:minmax(0,74fr) minmax(0,13fr) minmax(0,13fr);
   grid-template-rows:minmax(0,66fr) minmax(0,34fr);
@@ -531,6 +531,7 @@ body.hide-air #wxAir{display:none!important}
         <div class="sp-logo"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 18.5a2.5 2.5 0 1 1-2.5-2.5c.53 0 1.02.17 1.5.45V5.2l11-2.2v12.5a2.5 2.5 0 1 1-2.5-2.5c.53 0 1.02.17 1.5.45V7.3l-9 1.8z"/></svg></div>
         <p id="spConnectMsg">Spotify를 연결하면 휴대폰에서 재생 중인 음악을 여기서 조작할 수 있어요.</p>
         <button class="btn primary" id="spLoginBtn" style="background:var(--green);color:#000">Spotify 연결</button>
+        <button class="btn small" id="spPasteBtn" style="background:none;color:var(--accent)">연결 코드 붙여넣기</button>
       </div>
       <div id="spMain" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
         <div class="sp-now">
@@ -694,7 +695,7 @@ body.hide-air #wxAir{display:none!important}
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-27 iOS v4'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-27 iOS v5'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -731,6 +732,23 @@ if (!['track', 'builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'track';
 if (LS.get('cfgVer') !== 2) { // 위젯 화면으로 바뀐 버전: 기존 기기도 한 번 '내 위치 지도'로 전환
   CFG.navMode = 'track'; LS.set('config', { ...LS.get('config', {}), navMode: 'track' }); LS.set('cfgVer', 2);
 } // 없어진 '웹페이지 그대로' 모드 → 내장 내비
+
+/* ════════════ 0-1. 홈 화면 앱(웹앱) 화면 높이 보정 ════════════
+   iPhone 홈 화면 앱에서는 화면 높이가 상태바만큼 짧게 잡혀 아래가 비는 경우가 있어
+   실제 화면 높이로 맞춰 줍니다. */
+const IS_STANDALONE = !!(navigator.standalone || window.matchMedia?.('(display-mode: standalone)').matches);
+const IS_IPHONE = /iPhone|iPod/.test(navigator.userAgent);
+function fitViewport() {
+  let h = window.innerHeight;
+  if (IS_STANDALONE && IS_IPHONE) {
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    h = Math.max(h, portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height));
+  }
+  document.documentElement.style.setProperty('--appH', h + 'px');
+}
+fitViewport();
+window.addEventListener('resize', fitViewport);
+window.addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
 
 /* ════════════ 1. 유틸 ════════════ */
 const $ = (s, r = document) => r.querySelector(s);
@@ -1561,7 +1579,13 @@ async function keepAwake() {
   if (!CFG.keepAwake) return;
   try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch {}
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); spStartPolling(); } else spStopPolling(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    keepAwake(); fitViewport();
+    if (!SP.token && LS.get('sp.token')) { SP.token = LS.get('sp.token'); spShow(); spLoadPlaylists(); }
+    spStartPolling();
+  } else spStopPolling();
+});
 document.addEventListener('pointerdown', keepAwake);
 
 /* ════════════ 8. 시계 ════════════ */
@@ -1653,7 +1677,10 @@ function randStr(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); co
 async function spLogin() {
   if (!CFG.spotifyClientId) { openSettings(); toast('Spotify Client ID를 먼저 입력하세요.'); return; }
   if (!window.crypto?.subtle) { toast('Spotify 로그인은 HTTPS 주소에서만 됩니다.'); return; }
-  const verifier = randStr(64), state = randStr(16);
+  const verifier = randStr(64);
+  // 홈 화면 앱은 로그인 뒤 다른 창(저장공간이 다른 곳)으로 돌아올 수 있어서,
+  // 돌아온 창에서도 로그인을 마칠 수 있게 확인값을 state에 함께 실어 보냅니다.
+  const state = randStr(12) + '.' + verifier + '.' + (IS_STANDALONE ? 'a' : 'b');
   LS.set('sp.verifier', verifier); LS.set('sp.state', state);
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
@@ -1666,10 +1693,15 @@ async function spHandleCallback() {
   if (!q.has('code') && !q.has('error')) return;
   history.replaceState(null, '', redirectUri());
   if (q.get('error')) { toast('Spotify 로그인이 취소됐어요.'); return; }
-  if (q.get('state') !== LS.get('sp.state')) { toast('Spotify 로그인 확인에 실패했어요. 다시 시도해 주세요.'); return; }
+  const st = q.get('state') || '', parts = st.split('.');
+  const sameWindow = st === LS.get('sp.state');
+  const verifier = sameWindow ? LS.get('sp.verifier', '') : parts[1];
+  if (!verifier) { toast('Spotify 로그인 확인에 실패했어요. 다시 시도해 주세요.'); return; }
   try {
-    await spTokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), client_id: CFG.spotifyClientId, code_verifier: LS.get('sp.verifier', '') });
-    toast('Spotify 연결 완료 🎵');
+    await spTokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), client_id: CFG.spotifyClientId, code_verifier: verifier });
+    // 홈 화면 앱에서 시작했는데 다른 창으로 돌아온 경우 → 앱으로 옮길 연결 코드 보여주기
+    if (!sameWindow && parts[2] === 'a' && !IS_STANDALONE) showTransferCode();
+    else toast('Spotify 연결 완료 🎵');
   } catch (e) { toast('Spotify 로그인 실패: ' + e.message, 6000); }
 }
 async function spTokenRequest(params) {
@@ -1679,6 +1711,40 @@ async function spTokenRequest(params) {
   SP.token = { access: j.access_token, refresh: j.refresh_token || SP.token?.refresh, exp: Date.now() + (j.expires_in - 60) * 1000 };
   LS.set('sp.token', SP.token);
 }
+// ── 로그인 정보를 홈 화면 앱으로 옮기기 (Safari ↔ 홈 화면 앱은 저장공간이 따로라서) ──
+function transferCode() { return 'CP1-' + btoa(JSON.stringify({ r: SP.token?.refresh, c: CFG.spotifyClientId })); }
+function showTransferCode() {
+  const code = transferCode();
+  const m = document.createElement('div'); m.className = 'modal ios-modal';
+  m.innerHTML = `<div class="sheet ios-sheet"><div class="sheet-bar"><span></span><b>Spotify 연결</b><button>닫기</button></div>
+    <div class="sheet-scroll"><div class="grp" style="margin-top:16px;padding:16px;line-height:1.6;font-size:15px">
+      ✅ 로그인 완료! 홈 화면 앱은 저장공간이 따로라서 한 번만 옮겨 주세요.<br><br>
+      1. 아래 <b>코드 복사</b>를 누르고<br>2. 홈 화면 앱을 열어 Spotify 칸의 <b>연결 코드 붙여넣기</b>를 누르세요.
+      <button class="btn primary" style="width:100%;margin-top:14px" id="tcCopy">코드 복사</button>
+      <textarea readonly style="width:100%;margin-top:10px;height:70px;background:#2c2c2e;border:0;border-radius:10px;color:#aeaeb2;font-size:11px;padding:8px;-webkit-user-select:text;user-select:text">${code}</textarea>
+    </div></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('.sheet-bar button').onclick = () => m.remove();
+  m.querySelector('#tcCopy').onclick = async () => {
+    try { await navigator.clipboard.writeText(code); toast('복사했어요. 이제 홈 화면 앱에서 붙여넣으세요.'); }
+    catch { const t = m.querySelector('textarea'); t.select(); document.execCommand('copy'); toast('복사했어요'); }
+  };
+}
+async function spPasteCode() {
+  let txt = '';
+  try { txt = await navigator.clipboard.readText(); } catch {}
+  if (!/^CP1-/.test(txt.trim())) txt = prompt('Safari에서 복사한 연결 코드를 붙여넣으세요') || '';
+  txt = txt.trim();
+  if (!/^CP1-/.test(txt)) { if (txt) toast('연결 코드가 아니에요. Safari에서 Spotify 연결 후 나온 코드를 복사해 주세요.', 5000); return; }
+  try {
+    const j = JSON.parse(atob(txt.slice(4)));
+    if (j.c && j.c !== CFG.spotifyClientId) { CFG.spotifyClientId = j.c; LS.set('config', { ...LS.get('config', {}), spotifyClientId: j.c }); }
+    SP.token = { access: '', refresh: j.r, exp: 0 };
+    await spRefresh();
+    toast('Spotify 연결 완료 🎵'); spShow(); spStartPolling(); spLoadPlaylists();
+  } catch (e) { SP.token = null; LS.del('sp.token'); toast('연결하지 못했어요: ' + e.message, 5000); spShow(); }
+}
+
 let refreshing = null;
 function spRefresh() {
   if (!SP.token?.refresh) return Promise.reject(Object.assign(new Error('로그인 필요'), { fatal: true }));
@@ -2065,6 +2131,7 @@ function bindUI() {
 
   // Spotify
   $('#spLoginBtn').onclick = spLogin;
+  $('#spPasteBtn').onclick = spPasteCode;
   $('#spPlay').onclick = spTogglePlay;
   $('#spNext').onclick = () => spCmd(d => spApi(qs('/me/player/next', d), { method: 'POST' }));
   $('#spPrev').onclick = () => spCmd(d => spApi(qs('/me/player/previous', d), { method: 'POST' }));
