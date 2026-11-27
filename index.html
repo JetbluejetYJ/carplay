@@ -294,9 +294,9 @@ html,body{font-family:-apple-system,"SF Pro Text",BlinkMacSystemFont,"Apple SD G
 .glass{background:var(--mat);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:.5px solid rgba(255,255,255,.08);box-shadow:0 6px 24px rgba(0,0,0,.35)}
 
 /* 칸 비율 (가로 화면: 열/행, 세로 화면: 행) */
-body{--c1:62fr;--c2:19fr;--r1:72fr;--r2:28fr;--p1:40fr;--p2:42fr;--p3:18fr}
-body[data-layout="map"]{--c1:70fr;--c2:15fr;--r1:70fr;--r2:30fr;--p1:52fr;--p2:32fr;--p3:16fr}
-body[data-layout="music"]{--c1:52fr;--c2:24fr;--r1:74fr;--r2:26fr;--p1:32fr;--p2:52fr;--p3:16fr}
+body{--c1:62fr;--c2:19fr;--r1:72fr;--r2:28fr;--p1:48fr;--p2:36fr;--p3:16fr}
+body[data-layout="map"]{--c1:70fr;--c2:15fr;--r1:70fr;--r2:30fr;--p1:58fr;--p2:28fr;--p3:14fr}
+body[data-layout="music"]{--c1:52fr;--c2:24fr;--r1:74fr;--r2:26fr;--p1:36fr;--p2:48fr;--p3:16fr}
 body.mode-track #app{grid-template-columns:minmax(0,var(--c1)) minmax(0,var(--c2)) minmax(0,var(--c2));grid-template-rows:minmax(0,var(--r1)) minmax(0,var(--r2))}
 @media (max-aspect-ratio:1/1){
   body.mode-track #app{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,var(--p1)) minmax(0,var(--p2)) minmax(0,var(--p3))}
@@ -317,7 +317,12 @@ body.mode-track #app{grid-template-columns:minmax(0,var(--c1)) minmax(0,var(--c2
 #speedo b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
 #speedo span{color:#aeaeb2;font-size:11px;font-weight:600}
 body.hide-speed #speedo, body.hide-place #placeChip{display:none!important}
-#osmAttr{position:absolute;right:8px;bottom:6px;z-index:450;font-size:10px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.35);padding:2px 7px;border-radius:8px}
+#osmAttr{position:absolute;right:6px;bottom:6px;z-index:450;font-size:10px;line-height:18px;color:rgba(255,255,255,.8);background:rgba(0,0,0,.35);padding:0 6px;border-radius:9px;cursor:pointer}
+#osmAttr .at{display:none} #osmAttr.open .at{display:inline} #osmAttr.open .ai{display:none}
+#osmAttr:not(.open){width:18px;height:18px;padding:0;text-align:center;opacity:.55}
+.rng-row{gap:10px} .rng-row > span{flex:none;width:auto}
+.ios-range{flex:1;min-width:80px;accent-color:var(--accent)}
+.rng-v{flex:none;width:40px;text-align:right;font-variant-numeric:tabular-nums;color:#aeaeb2;font-weight:500}
 #osmAttr a{color:inherit;text-decoration:none}
 
 /* 진행 방향으로 지도 회전 */
@@ -485,7 +490,7 @@ body:not(.mode-track) #fabDest, body.no-dest #fabDest{display:none!important}
 body.lite .car-marker .me-rot{transition:none}
 .maplibregl-canvas{outline:none}
 #map.maplibregl-map{background:#22262d}
-#osmAttr{max-width:calc(100% - 100px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#osmAttr.open{max-width:calc(100% - 100px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 지도 끄기: 음악을 크게, 지도 칸은 속도 표시로 */
 body.map-off #map, body.map-off #mapFabs, body.map-off #placeChip, body.map-off #osmAttr{display:none!important}
@@ -673,6 +678,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
 
       <div class="grp-title">지도</div>
       <div class="grp">
+        <div class="row"><span>지도 스타일</span><div class="seg" data-key="mapStyle"><button data-v="naver">네이버 느낌</button><button data-v="apple">애플 느낌</button><button data-v="google">구글 느낌</button></div></div>
         <div class="row"><span>지도 색</span><div class="seg" data-key="theme"><button data-v="auto">자동</button><button data-v="light">밝게</button><button data-v="dark">어둡게</button></div></div>
         <div class="row"><span>확대</span><div class="seg" data-key="zoomMode"><button data-v="auto">속도 맞춤</button><button data-v="near">가까이</button><button data-v="mid">보통</button><button data-v="far">넓게</button></div></div>
         <label class="row"><span>진행 방향으로 지도 돌리기<small>켜면 지도를 손으로 끌 수 없어요</small></span><input type="checkbox" class="ios-toggle" data-key="headingUp"></label>
@@ -711,7 +717,10 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
 
       <div class="grp-title">화면</div>
       <div class="grp">
-        <div class="row"><span>칸 비율</span><div class="seg" data-key="layout"><button data-v="map">지도 크게</button><button data-v="balance">균형</button><button data-v="music">음악 크게</button></div></div>
+        <div class="row"><span>칸 비율</span><div class="seg" data-key="layout"><button data-v="map">지도 크게</button><button data-v="balance">균형</button><button data-v="music">음악 크게</button><button data-v="custom">직접</button></div></div>
+        <div class="row rng-row"><span>지도 높이<small>세로 화면</small></span><input type="range" class="ios-range" data-key="szMap" min="28" max="72" step="1"><b class="rng-v" data-for="szMap"></b></div>
+        <div class="row rng-row"><span>시계·날씨 높이<small>세로 화면 · 나머지는 음악</small></span><input type="range" class="ios-range" data-key="szBottom" min="8" max="26" step="1"><b class="rng-v" data-for="szBottom"></b></div>
+        <div class="row rng-row"><span>지도 너비<small>가로 화면</small></span><input type="range" class="ios-range" data-key="szMapW" min="40" max="78" step="1"><b class="rng-v" data-for="szMapW"></b></div>
         <div class="row"><span>화면 높이 맞춤<small>홈 화면 앱에서 아래가 잘리거나 비면 조절</small></span><div class="seg" id="hAdjSeg"><button data-h="-8">－</button><button data-h="0" id="hAdjVal">0</button><button data-h="8">＋</button></div></div>
         <div class="row"><span>강조 색</span><div class="swatches" data-key="accent"></div></div>
         <label class="row"><span>화면 꺼지지 않게</span><input type="checkbox" class="ios-toggle" data-key="keepAwake"></label>
@@ -809,7 +818,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-28 v10'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-28 v11'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -820,6 +829,8 @@ const DEFAULT_CONFIG = {
   headingUp: false,      // 진행 방향으로 지도 회전
   trail: true,           // 지나온 길 표시
   showSpeed: true, showPlace: true,
+  szMap: 50, szBottom: 15, szMapW: 62, // 칸 비율 '직접' (%)
+  mapStyle: 'apple',     // naver | apple | google (지도 색 느낌)
   layout: 'balance',     // map | balance | music  (칸 비율)
   accent: '#0a84ff',     // 강조 색
   keepAwake: true,       // 화면 꺼짐 방지
@@ -1114,7 +1125,7 @@ const LeafletAdapter = {
   kind: 'leaflet',
   init(el, c) {
     this.map = L.map(el, { zoomControl: false, attributionControl: false }).setView([c.lat, c.lng], 16);
-    $('#osmAttr').innerHTML = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'; $('#osmAttr').hidden = false; // 저작권 표시는 지도 밖에 고정
+    setAttr('© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'); // 저작권 표시는 지도 밖에 고정
     this.applyTheme();
     this.map.on('dragstart', onUserMapMove);
     this.map.on('click', onMapClick);
@@ -1180,7 +1191,8 @@ const LeafletAdapter = {
 };
 
 /* ════════════ 네이버 지도풍 지도 스타일 (OpenFreeMap 벡터 지도, 키 필요 없음) ════════════ */
-const MAP_PAL = {
+const MAP_PALS = {
+ naver: {
   day: {
     bg: '#f6f5f2', land: '#efede8', park: '#d3e9c2', water: '#a9d3ef', bld: '#eae7e1', bldLine: '#e0dcd5',
     minor: '#ffffff', minorCase: '#d9d5cd', ter: '#ffffff', terCase: '#cfc9be', sec: '#fff2bf', secCase: '#e3c873',
@@ -1193,7 +1205,36 @@ const MAP_PAL = {
     pri: '#8a733e', priCase: '#22262d', trunk: '#987a3f', trunkCase: '#22262d', mw: '#b0793f', mwCase: '#22262d',
     rail: '#3a3f48', text: '#d4d7dc', halo: '#22262d', place: '#e8eaed'
   }
+ },
+ apple: { // 애플 지도 느낌: 차분한 베이지 땅, 흰 길, 연한 노랑 큰길
+  day: {
+    bg: '#f5f3ee', land: '#f0ede6', park: '#cfe8c0', water: '#9cd0f3', bld: '#e6e2db', bldLine: '#d6d1c8',
+    minor: '#ffffff', minorCase: '#ddd8cf', ter: '#ffffff', terCase: '#d3cdc2', sec: '#ffffff', secCase: '#cbc4b6', pri: '#fde9ad', priCase: '#e0c477',
+    trunk: '#fcd581', trunkCase: '#dcac50', mw: '#f7bd66', mwCase: '#d0933b', rail: '#c4c0b8', text: '#3a3a3c', halo: '#ffffff', place: '#1c1c1e'
+  },
+  night: {
+    bg: '#1e1f23', land: '#222327', park: '#1d3326', water: '#182a40', bld: '#2a2b30', bldLine: '#34353b',
+    minor: '#393a40', minorCase: '#1e1f23', ter: '#45464d', terCase: '#1e1f23', sec: '#54555c', secCase: '#1e1f23', pri: '#76674a', priCase: '#1e1f23',
+    trunk: '#87714a', trunkCase: '#1e1f23', mw: '#9e7a42', mwCase: '#1e1f23', rail: '#38393e', text: '#e5e5ea', halo: '#1e1f23', place: '#f2f2f7'
+  }
+ },
+ google: { // 구글 지도 느낌: 회색 땅, 흰 길, 노란 고속도로
+  day: {
+    bg: '#f8f9fa', land: '#f1f3f4', park: '#c6e9c6', water: '#aadaff', bld: '#e8eaed', bldLine: '#dadce0',
+    minor: '#ffffff', minorCase: '#e0e3e7', ter: '#ffffff', terCase: '#d4d7db', sec: '#ffffff', secCase: '#cbcfd4', pri: '#ffffff', priCase: '#bfc4ca',
+    trunk: '#fde293', trunkCase: '#efc24f', mw: '#fcd26b', mwCase: '#e5aa25', rail: '#c6cacf', text: '#5f6368', halo: '#ffffff', place: '#3c4043'
+  },
+  night: {
+    bg: '#242f3e', land: '#26313f', park: '#263c3f', water: '#17263c', bld: '#2c3848', bldLine: '#334154',
+    minor: '#38414e', minorCase: '#212a37', ter: '#414b5a', terCase: '#212a37', sec: '#4b5566', secCase: '#212a37', pri: '#56617a', priCase: '#1f2835',
+    trunk: '#746855', trunkCase: '#1f2835', mw: '#8a7a5d', mwCase: '#1f2835', rail: '#2f3948', text: '#c2c8d1', halo: '#17263c', place: '#d59563'
+  }
+ }
 };
+function setAttr(html) { // 지도 저작권 표시: 평소엔 작은 ⓘ, 누르면 5초 동안 펼침
+  const a = $('#osmAttr'); a.innerHTML = `<span class="ai">i</span><span class="at">${html}</span>`; a.hidden = false; a.classList.remove('open');
+  if (!a._b) { a._b = 1; a.addEventListener('click', e => { if (e.target.closest('a')) return; e.stopPropagation(); a.classList.toggle('open'); clearTimeout(a._t); a._t = setTimeout(() => a.classList.remove('open'), 5000); }); }
+}
 let OFM = null;
 async function getOfmBase() { // 타일·글꼴 주소는 OpenFreeMap이 바꿀 수 있어서 공식 스타일에서 읽어 옴
   if (OFM) return OFM;
@@ -1202,7 +1243,7 @@ async function getOfmBase() { // 타일·글꼴 주소는 OpenFreeMap이 바꿀 
   return OFM;
 }
 function buildMapStyle(dark, base) {
-  const P = dark ? MAP_PAL.night : MAP_PAL.day, S = 'openmaptiles';
+  const PAL = MAP_PALS[CFG.mapStyle] || MAP_PALS.apple, P = dark ? PAL.night : PAL.day, S = 'openmaptiles';
   const z = (a, b, c) => ['interpolate', ['exponential', 1.4], ['zoom'], 10, a, 14, b, 18, c];
   const cls = list => ['match', ['get', 'class'], list, true, false];
   const name = ['coalesce', ['get', 'name:ko'], ['get', 'name']];
@@ -1297,7 +1338,7 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
       if (POI_ICONS[e.id]) { const { img, pixelRatio } = poiImage(e.id); this.map.addImage(e.id, img, { pixelRatio }); }
       else if (e.id === 'sig-icon') { const { img, pixelRatio } = sigImage(); this.map.addImage(e.id, img, { pixelRatio }); }
     });
-    $('#osmAttr').innerHTML = ATTR_GL; $('#osmAttr').hidden = false;
+    setAttr(ATTR_GL);
   },
   addOverlays() {
     const m = this.map, rl = { 'line-cap': 'round', 'line-join': 'round' };
@@ -1349,6 +1390,7 @@ const GLAdapter = { // 네이버풍 벡터 지도 (MapLibre + OpenFreeMap)
     if (!this.park) { const e = document.createElement('div'); e.className = 'park-pin'; e.textContent = 'P'; this.park = new maplibregl.Marker({ element: e }).setLngLat([p.lng, p.lat]).addTo(this.map); }
     else this.park.setLngLat([p.lng, p.lat]);
   },
+  async restyle() { if (!this.map) return; this.dark = isDarkMap(); this.map.setStyle(buildMapStyle(this.dark, await getOfmBase()), { diff: false }); },
   async applyTheme() { const d = isDarkMap(); if (!this.map || d === this.dark) return; this.dark = d; this.map.setStyle(buildMapStyle(d, await getOfmBase()), { diff: false }); },
   refreshMe() {
     if (this.me) { const ll = this.me.getLngLat(); this.me.remove(); this.me = null; this.setMe({ lat: ll.lat, lng: ll.lng }, lastShownH); }
@@ -2689,6 +2731,11 @@ let advSnapshot = null;
 function applyDisplay() {
   const b = document.body;
   b.dataset.layout = CFG.layout;
+  if (CFG.layout === 'custom') { // 직접 조절한 비율
+    const m = +CFG.szMap || 50, bt = +CFG.szBottom || 15, w = +CFG.szMapW || 62;
+    b.style.setProperty('--p1', m + 'fr'); b.style.setProperty('--p3', bt + 'fr'); b.style.setProperty('--p2', Math.max(15, 100 - m - bt) + 'fr');
+    b.style.setProperty('--c1', w + 'fr'); b.style.setProperty('--c2', ((100 - w) / 2) + 'fr');
+  } else ['--p1', '--p2', '--p3', '--c1', '--c2'].forEach(v => b.style.removeProperty(v));
   b.classList.toggle('lite', !!CFG.lite);
   b.classList.toggle('hide-speed', !CFG.showSpeed);
   b.classList.toggle('hide-place', !CFG.showPlace);
@@ -2711,6 +2758,7 @@ function setCfg(k, v) {
   if (k === 'zoomMode' && S.pos) followCamera(S.pos, true);
   if (k === 'headingUp' && MV) applyHeadingUp();
   if (k === 'trail' && !v) MV?.clearTrail?.();
+  if (k === 'mapStyle') MV?.restyle?.();
   if (k === 'layout') setTimeout(() => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); }, 80);
   if (k === 'keepAwake') { if (v) keepAwake(); else { try { wakeLock?.release(); } catch {} wakeLock = null; } }
   if (k === 'clock24' || k === 'clockSeconds') tickClock();
@@ -2739,6 +2787,8 @@ function renderSettingsControls() {
     if (!s.children.length) s.innerHTML = list.map(c => `<button data-v="${c}" style="background:${c}" aria-label="색 ${c}"></button>`).join('');
     s.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === CFG[s.dataset.key]));
   });
+  box.querySelectorAll('.ios-range[data-key]').forEach(r => { r.value = CFG[r.dataset.key]; });
+  box.querySelectorAll('.rng-v').forEach(v => { v.textContent = CFG[v.dataset.for] + '%'; });
   $('#hAdjVal').textContent = (CFG.hAdjust > 0 ? '+' : '') + (CFG.hAdjust || 0);
   $('#iconPicker').innerHTML = ME_ICONS.map(([k, label]) =>
     `<button data-icon="${k}" class="${k === CFG.meIcon ? 'on' : ''}"><span class="pv">${meIconSvg(k, CFG.meColor, 34)}</span>${label}</button>`).join('');
@@ -2772,6 +2822,12 @@ function closeSettings() {
 function bindSettings() {
   const box = $('#settings');
   box.addEventListener('change', e => { const t = e.target; if (t.matches('.ios-toggle[data-key]')) setCfg(t.dataset.key, t.checked); });
+  box.addEventListener('input', e => { // 비율 슬라이더: 움직이면 바로 '직접'으로
+    const t = e.target; if (!t.matches('.ios-range[data-key]')) return;
+    CFG.layout = 'custom'; LS.set('config', { ...LS.get('config', {}), layout: 'custom' });
+    setCfg(t.dataset.key, +t.value); renderSettingsControls();
+    clearTimeout(t._rz); t._rz = setTimeout(() => { if (headingUpActive()) applyHeadingUp(); else MV?.resize(); }, 120);
+  });
   box.addEventListener('click', e => {
     const sb = e.target.closest('.seg[data-key] button'); if (sb) { setCfg(sb.parentElement.dataset.key, sb.dataset.v); return; }
     const sw = e.target.closest('.swatches[data-key] button'); if (sw) { setCfg(sw.parentElement.dataset.key, sw.dataset.v); return; }
