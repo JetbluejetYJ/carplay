@@ -269,6 +269,12 @@ body:not(.mode-track) #placeChip{display:none}
   .sp-ctrls{margin:2px 0} .sp-progress{margin-top:6px}
 }
 
+/* OpenStreetMap 지도: 밤에는 타일만 반전, 저작권 표시는 작고 어둡게 */
+.osm-dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.6)}
+.osm-dark.leaflet-container{background:#191a1d}
+.leaflet-control-attribution{background:rgba(0,0,0,.45)!important;color:#bbb!important;font-size:10px!important;border-radius:8px 0 0 0}
+.leaflet-control-attribution a{color:#ddd!important}
+
 /* ───── 가벼운 화면 (구형 iPad용: 블러·필터 끄기) ───── */
 body.lite .glass{background:rgba(22,23,27,.97);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
 body.lite .sp-bg{inset:0;filter:none;opacity:.18;transition:none}
@@ -527,7 +533,10 @@ const LS = {
 };
 const CFG = { ...DEFAULT_CONFIG };
 for (const [k, v] of Object.entries(LS.get('config', {}) || {})) if (v !== '' && v != null) CFG[k] = v;
-if (!['track', 'builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'track'; // 없어진 '웹페이지 그대로' 모드 → 내장 내비
+if (!['track', 'builtin', 'app'].includes(CFG.navMode)) CFG.navMode = 'track';
+if (LS.get('cfgVer') !== 2) { // 위젯 화면으로 바뀐 버전: 기존 기기도 한 번 '내 위치 지도'로 전환
+  CFG.navMode = 'track'; LS.set('config', { ...LS.get('config', {}), navMode: 'track' }); LS.set('cfgVer', 2);
+} // 없어진 '웹페이지 그대로' 모드 → 내장 내비
 
 /* ════════════ 1. 유틸 ════════════ */
 const $ = (s, r = document) => r.querySelector(s);
@@ -696,13 +705,11 @@ const LeafletAdapter = {
     this.map.on('click', onMapClick);
   },
   applyTheme() {
-    const dark = isDarkMap();
-    if (this.tiles && this.tilesDark === dark) return;
-    this.tiles?.remove();
-    this.tilesDark = dark;
-    this.tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`, {
-      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    // OpenStreetMap 기본 지도 (키 필요 없음). 밤에는 색을 반전해 어둡게 표시
+    if (!this.tiles) this.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(this.map);
+    this.map.getContainer().classList.toggle('osm-dark', isDarkMap());
   },
   panTo(p, zoom) {
     if (zoom != null && this.map.getZoom() !== zoom) this.map.setView([p.lat, p.lng], zoom, { animate: true });
