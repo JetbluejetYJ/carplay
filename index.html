@@ -51,6 +51,7 @@ svg{display:block}
 
 /* ───── 지도 ───── */
 #map{position:absolute;inset:0}
+#map.is-naver a{pointer-events:none} /* 로고를 눌러 네이버 지도 앱으로 넘어가는 것 방지 */
 body.map-dark:not(.traffic-on) #map.is-naver img{filter:invert(.92) hue-rotate(180deg) saturate(.75) brightness(.95)}
 .car-marker{width:44px;height:44px;transition:transform .4s linear;will-change:transform}
 .leaflet-div-icon-clear{background:none;border:0}
@@ -364,6 +365,7 @@ body.lite .car-marker{transition:none}
             <div id="spTitle">-</div>
             <div id="spArtist"></div>
             <div id="spDevice"></div>
+            <a id="spOpenApp" class="btn small" href="spotify:" hidden style="display:inline-flex;margin-top:8px;background:var(--green);color:#000;text-decoration:none">Spotify 앱 열기</a>
           </div>
         </div>
         <div class="sp-progress" id="spProgress"><div class="sp-track"><div id="spBar"></div></div></div>
@@ -488,9 +490,9 @@ body.lite .car-marker{transition:none}
 const DEFAULT_CONFIG = {
   navMode: 'builtin',    // builtin: 이 화면 안의 내비게이션 | app: 버튼으로 네이버 지도 앱 실행
   lite: true,            // 가벼운 화면: 블러/필터 효과를 꺼서 구형 iPad에서도 부드럽게
-  naverKeyId: '',       // 네이버 클라우드 Maps Application Client ID
+  naverKeyId: '7n1ohwtswn', // 네이버 클라우드 Maps Application Client ID
   proxyUrl: '',          // Cloudflare Worker 주소 (네이버 길찾기/장소검색용)
-  spotifyClientId: '',   // Spotify 앱 Client ID
+  spotifyClientId: '7afc32c54551444e93c554bd45a29ebe', // Spotify 앱 Client ID
   theme: 'auto',         // auto | dark | light
   voice: true,           // 음성 안내
   clock24: true,         // 24시간제
@@ -1334,7 +1336,8 @@ function reverseGeocode(p) {
 /* ════════════ 10. Spotify (휴대폰 앱을 원격 조작) ════════════ */
 const SP = { token: LS.get('sp.token'), state: null, at: 0, polling: null, playlists: [] };
 const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative';
-const redirectUri = () => location.origin + location.pathname;
+// .../carplay/index.html 로 열어도 .../carplay/ 로 통일 (Spotify에 등록한 주소와 똑같아야 함)
+const redirectUri = () => location.origin + location.pathname.replace(/index\.html$/, '');
 const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 4.8v14.4L19.5 12z"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 4h4v16h-4zM13.5 4h4v16h-4z"/></svg>';
 
@@ -1418,6 +1421,7 @@ function spRender() {
   $('#spRepeat').className = 'sp-btn small ' + (rep !== 'off' ? 'on' : 'off');
   $('#spRepeat .one').hidden = rep !== 'track';
   if (!it) {
+    $('#spOpenApp').hidden = !!st?.device;
     $('#spTitle').textContent = '재생 중인 음악 없음';
     $('#spArtist').textContent = '아래 플레이리스트를 눌러 재생하세요';
     $('#spDevice').textContent = st?.device ? '🔈 ' + st.device.name : '';
@@ -1426,6 +1430,7 @@ function spRender() {
     $('#spCur').textContent = $('#spDur').textContent = '0:00'; $('#spBar').style.width = '0';
     return;
   }
+  $('#spOpenApp').hidden = true;
   const img = (it.album?.images || it.images || it.show?.images || [])[0]?.url || '';
   if ($('#spArt').dataset.src !== img) {
     $('#spArt').dataset.src = img;
@@ -1449,7 +1454,7 @@ function spTickProgress() {
 async function spEnsureDevice() {
   const j = await spApi('/me/player/devices');
   const devs = j?.devices || [];
-  if (!devs.length) { toast('재생할 기기가 없어요. 휴대폰에서 Spotify 앱을 한 번 열어주세요.', 5000); return null; }
+  if (!devs.length) { $('#spOpenApp').hidden = false; toast('Spotify 앱이 꺼져 있어요. "Spotify 앱 열기"를 눌러 앱을 한 번 켠 뒤 돌아오세요.', 6000); return null; }
   const d = devs.find(x => x.is_active) || devs.find(x => x.type === 'Smartphone') || devs[0];
   if (!d.is_active) { await spApi('/me/player', { method: 'PUT', body: { device_ids: [d.id], play: false } }); await sleep(700); }
   return d.id;
