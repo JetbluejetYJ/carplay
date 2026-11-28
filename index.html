@@ -759,7 +759,8 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
         <label class="row"><span>지나온 길 표시</span><input type="checkbox" class="ios-toggle" data-key="trail"></label>
         <label class="row"><span>속도계</span><input type="checkbox" class="ios-toggle" data-key="showSpeed"></label>
         <label class="row"><span>지금 달리는 도로 이름</span><input type="checkbox" class="ios-toggle" data-key="showPlace"></label>
-        <button class="row link" id="clearTrail">지나온 길 지우기</button>
+        <label class="row"><span>GPS 튐 보정<small>멈춰 있을 때 위치를 고정하고, 튀는 값은 버려요</small></span><input type="checkbox" class="ios-toggle" data-key="gpsFilter"></label>
+        <button class="row link" id="clearTrail">지나온 길·걸어간 길 지우기</button>
       </div>
 
       <div class="grp-title">주차</div>
@@ -898,7 +899,7 @@ body.map-off.mode-track #app{grid-template-columns:minmax(0,68fr) minmax(0,32fr)
    여기에 키를 적어두면 어떤 기기에서 열어도 바로 동작합니다.
    (설정 화면에서 입력한 값이 있으면 그 값이 우선합니다)
    ════════════════════════════════════════════════════════════ */
-const APP_VERSION = '11-28 v14'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
+const APP_VERSION = '11-28 v15'; // 설정 화면에 표시 — GitHub에 올린 새 버전이 떴는지 확인용
 const DEFAULT_CONFIG = {
   navMode: 'track',      // track: 내 위치 지도(위젯용) | app: 네이버 지도 앱 실행 버튼 | builtin: 내장 내비
   lite: false,           // 가벼운 화면: 흐림/애니메이션 효과 끄기 (구형 기기용)
@@ -911,7 +912,8 @@ const DEFAULT_CONFIG = {
   showSpeed: true, showPlace: true,
   szMap: 50, szBottom: 15, szMapW: 62,
   fsMusic: 100, fsClock: 100, fsSpeed: 100, fsWeather: 100, // 글자 크기(%)
-  wxAnim: true,          // 날씨 배경 움직이기 // 칸 비율 '직접' (%)
+  wxAnim: true,
+  gpsFilter: true,       // GPS 튐 보정 (멈춰 있을 때 위치 고정, 튀는 점 버리기)          // 날씨 배경 움직이기 // 칸 비율 '직접' (%)
   mapStyle: 'apple',     // naver | apple | google (지도 색 느낌)
   layout: 'balance',     // map | balance | music  (칸 비율)
   accent: '#0a84ff',     // 강조 색
@@ -1602,8 +1604,10 @@ function startGeo() {
   if (!('geolocation' in navigator)) { toast('이 브라우저는 위치 기능을 지원하지 않습니다.'); return; }
   navigator.geolocation.watchPosition(p => {
     const fix = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: p.timestamp || Date.now() };
-    S.realPos = fix;
-    if (!S.sim) handlePosition(fix);
+    const f = CFG.gpsFilter ? gpsFilter(fix) : fix;
+    if (!f) return; // 튄 값은 버림
+    S.realPos = f;
+    if (!S.sim) handlePosition(f);
   }, err => {
     if (S.geoErrShown) return; S.geoErrShown = true;
     const msg = err.code === 1 ? '위치 권한이 거부됐어요. 브라우저 설정에서 위치를 허용해 주세요.'
@@ -1613,13 +1617,48 @@ function startGeo() {
 }
 
 let firstFix = true, lastSave = 0;
+/* GPS 튐 보정
+   · 정확도가 나쁜 값(±70m 넘음)은 버림. 다만 20초 넘게 좋은 값이 없으면 그냥 씀
+   · 이전 위치에서 말이 안 되는 속도(시속 200km 넘게)로 순간이동한 값은 버림
+   · 멈춰 있을 때: 위치가 오차 범위 안에서만 흔들리면 '정지'로 보고 한 점에 고정, 속도 0
+     (고정점은 정확도 좋은 값 쪽으로 천천히 맞춰짐)
+   · 실제로 움직이기 시작하면(오차 범위를 벗어나거나 GPS 속도가 1.5m/s 넘음) 바로 풀림 */
+const GF = { last: null, anchor: null, goodT: 0 };
+function gpsFilter(fix) {
+  const acc = fix.acc || 0, now = fix.t || Date.now(), last = GF.last;
+  if (acc > 70 && last && now - GF.goodT < 20000) return null;
+  if (acc <= 70) GF.goodT = now;
+  if (last) {
+    const dt = Math.max(.5, (now - last.t) / 1000), d = hav(last, fix);
+    if (d > Math.max(acc, 30) && d / dt > 55) return null; // 순간이동
+  }
+  const gpsSpd = fix.speed != null && fix.speed >= 0 ? fix.speed : null;
+  const A = GF.anchor;
+  if (A && (gpsSpd == null || gpsSpd < 1 || acc > 20)) { // GPS 속도는 정확할 때만 믿음
+    const radius = Math.max(15, Math.min(acc, 50));
+    const out_ = hav(A, fix) >= radius;
+    GF.outN = out_ ? (GF.outN || 0) + 1 : 0;
+    // 범위 밖 값이 1~2번 나오는 건 흔들림 → 무시. 3번 연속(약 3초) 벗어나야 '움직임'
+    if (GF.outN < 3) {
+      if (!out_) { const w = acc < A.acc ? .3 : .08; A.lat += (fix.lat - A.lat) * w; A.lng += (fix.lng - A.lng) * w; A.acc = Math.min(A.acc, acc) * .98 + acc * .02; }
+      const o = { ...fix, lat: A.lat, lng: A.lng, acc: A.acc, speed: 0, heading: null, still: true };
+      GF.last = o; return o;
+    }
+  }
+  GF.outN = 0;
+  // 움직이는 중이거나 처음
+  const slow = gpsSpd == null ? (last ? hav(last, fix) / Math.max(.5, (now - last.t) / 1000) < 1 : true) : gpsSpd < 1;
+  GF.anchor = slow ? { lat: fix.lat, lng: fix.lng, acc } : null;
+  const out = { ...fix, speed: gpsSpd != null ? (gpsSpd < .8 ? 0 : gpsSpd) : fix.speed };
+  GF.last = out; return out;
+}
 function handlePosition(fix) {
   const prev = S.pos;
   let h = (fix.heading != null && !isNaN(fix.heading) && (fix.speed || 0) > 1.5) ? fix.heading : null;
-  if (h == null && prev && hav(prev, fix) > 5) h = bearing(prev, fix);
+  if (h == null && prev && !fix.still && hav(prev, fix) > Math.max(8, (fix.acc || 0) * .5)) h = bearing(prev, fix);
   if (h != null) S.heading = h;
   if (fix.speed != null && fix.speed >= 0) S.speed = fix.speed;
-  else if (prev && fix.t > prev.t) S.speed = hav(prev, fix) / ((fix.t - prev.t) / 1000);
+  else if (prev && fix.t - prev.t >= 1500) { const v = hav(prev, fix) / ((fix.t - prev.t) / 1000); S.speed = v < 1 ? 0 : v; }
   S.pos = fix;
   $('#speedVal').textContent = Math.round(S.speed * 3.6);
   updateSpeedAlert(); updateTrip(fix);
@@ -1632,7 +1671,7 @@ function handlePosition(fix) {
   }
   if (MV) {
     if (S.speed > 1.5 || firstFix) setMapRotation(shownH);
-    if (CFG.navMode === 'track' && !S.sim && (fix.acc || 0) < 50) MV.addTrail?.(fix);
+    if (CFG.navMode === 'track' && !S.sim && !fix.still && (fix.acc || 0) <= 30) MV.addTrail?.(fix);
     MV.setMe(shown, shownH);
     if (firstFix) { firstFix = false; S.follow = true; MV.panTo(shown, 16); }
     else followCamera(shown);
@@ -2698,9 +2737,9 @@ function parkDetect(fix) {
     if (PK.driving) PK.cand = null;
   } else if (kmh <= 3) PK.fastSince = 0;
   // 주차 후 걸어간 길
-  if (!PK.driving && PK.walkOn && CFG.parkWalkTrail && good && kmh < 12 && LS.get('parking')) {
+  if (!PK.driving && PK.walkOn && CFG.parkWalkTrail && !fix.still && (fix.acc || 0) <= 25 && kmh < 12 && LS.get('parking')) {
     const w = LS.get('parkWalk', []), last = w[w.length - 1];
-    if (!last || hav({ lat: last[1], lng: last[0] }, fix) > 6) { w.push([fix.lng, fix.lat]); if (w.length > 600) w.shift(); LS.set('parkWalk', w); MV?.setWalk?.(w); }
+    if (!last || hav({ lat: last[1], lng: last[0] }, fix) > Math.max(10, (fix.acc || 0))) { w.push([fix.lng, fix.lat]); if (w.length > 600) w.shift(); LS.set('parkWalk', w); MV?.setWalk?.(w); }
   }
   if (!CFG.autoPark || !PK.driving || !good) return;
   if (kmh < 3 && (!PK.cand || hav(PK.cand, fix) > 25)) PK.cand = { lat: fix.lat, lng: fix.lng, t: now };
@@ -2989,7 +3028,7 @@ function bindSettings() {
     if (e.target === box) closeSettings();
   });
   $('#settingsDone').onclick = closeSettings;
-  $('#clearTrail').onclick = () => { MV?.clearTrail?.(); toast('지나온 길을 지웠어요'); };
+  $('#clearTrail').onclick = () => { MV?.clearTrail?.(); LS.del('parkWalk'); MV?.setWalk?.([]); toast('지나온 길과 걸어간 길을 지웠어요'); };
   $('#hAdjSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
     const d = +b.dataset.h; setCfg('hAdjust', d === 0 ? 0 : (Number(CFG.hAdjust) || 0) + d);
